@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
         <div className="p-6 border-b border-sidebar-border">
           <h1 className="text-xl font-bold font-display tracking-tight flex items-center gap-2">
-            🍔 <span className="text-sidebar-primary">FastPOS</span>
+            🍔 <span className="text-sidebar-primary">Pancho Burger</span>
           </h1>
           <p className="text-xs text-sidebar-foreground/60 mt-1">Sistema de Punto de Venta</p>
         </div>

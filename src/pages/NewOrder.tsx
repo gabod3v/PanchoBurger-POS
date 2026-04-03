@@ -20,6 +20,7 @@ export default function NewOrder() {
   const [items, setItems] = useState<Record<string, number>>({});
   const [originalTicket, setOriginalTicket] = useState<number | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentDay, products } = state;
   const exchangeRate = currentDay?.exchangeRate || 0;
 
@@ -89,6 +90,7 @@ export default function NewOrder() {
   const totalLocal = totalUSD * exchangeRate;
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!customerName.trim()) {
       toast.error('Ingresa el nombre del cliente');
       return;
@@ -98,27 +100,35 @@ export default function NewOrder() {
       return;
     }
 
-    if (editId) {
-      await deleteOrder(editId);
-    }
+    setIsSubmitting(true);
+    try {
+      if (editId) {
+        await deleteOrder(editId);
+      }
 
-    await addOrder(
-      customerName.trim(), 
-      orderItems, 
-      undefined, 
-      originalTicket || undefined
-    );
+      await addOrder(
+        customerName.trim(), 
+        orderItems, 
+        state.currentDay?.id || undefined, 
+        originalTicket || undefined
+      );
 
-    toast.success(editId ? `Pedido #${originalTicket} actualizado` : `Pedido #${state.nextTicket} creado`, {
-      description: `Cliente: ${customerName.trim()}`,
-    });
+      toast.success(editId ? `Pedido #${originalTicket} actualizado` : `Pedido #${state.nextTicket} creado`, {
+        description: `Cliente: ${customerName.trim()}`,
+      });
 
-    if (editId) {
-      navigate('/pedidos');
-    } else {
-      setCustomerName('');
-      setItems({});
-      setOriginalTicket(null);
+      if (editId) {
+        navigate('/pedidos');
+      } else {
+        setCustomerName('');
+        setItems({});
+        setOriginalTicket(null);
+      }
+    } catch (error) {
+      console.error('Error saving order:', error);
+      toast.error('Error al guardar el pedido');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -278,9 +288,9 @@ export default function NewOrder() {
             className="w-full mt-2 h-14 text-base tracking-wide uppercase font-bold shadow-md hover:shadow-lg transition-all"
             size="lg"
             onClick={handleSubmit}
-            disabled={orderItems.length === 0}
+            disabled={orderItems.length === 0 || isSubmitting}
           >
-            {editId ? 'Guardar Cambios' : 'Confirmar Pedido'}
+            {isSubmitting ? 'Guardando...' : (editId ? 'Guardar Cambios' : 'Confirmar Pedido')}
           </Button>
         </div>
       </div>

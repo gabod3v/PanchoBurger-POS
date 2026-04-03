@@ -129,12 +129,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       for (const action of actions) {
         try {
+          const fCol = action.filterColumn || 'id';
+          const fVal = action.filterValue ?? action.data.id;
+
           if (action.type === 'INSERT') {
             await supabase.from(action.table).insert([action.data]);
           } else if (action.type === 'UPDATE') {
-            await supabase.from(action.table).update(action.data).eq('id', action.data.id);
+            await supabase.from(action.table).update(action.data).eq(fCol, fVal);
           } else if (action.type === 'DELETE') {
-            await supabase.from(action.table).delete().eq('id', action.data.id);
+            await supabase.from(action.table).delete().eq(fCol, fVal);
           }
           dispatch({ type: 'CLEAR_PENDING', payload: action.id });
         } catch (e) {
@@ -245,16 +248,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadData();
   }, []);
 
-  const performMutation = async (type: 'INSERT' | 'UPDATE' | 'DELETE', table: string, data: any) => {
+  const performMutation = async (type: 'INSERT' | 'UPDATE' | 'DELETE', table: string, data: any, filterColumn: string = 'id', filterValue?: any) => {
+    const fVal = filterValue ?? data.id;
     try {
       if (type === 'INSERT') await supabase.from(table).insert([data]);
-      else if (type === 'UPDATE') await supabase.from(table).update(data).eq('id', data.id);
-      else if (type === 'DELETE') await supabase.from(table).delete().eq('id', data.id);
+      else if (type === 'UPDATE') await supabase.from(table).update(data).eq(filterColumn, fVal);
+      else if (type === 'DELETE') await supabase.from(table).delete().eq(filterColumn, fVal);
     } catch (e) {
       console.warn(`Mutation failed, queueing for later: ${table}`, e);
       dispatch({
         type: 'QUEUE_ACTION',
-        payload: { id: crypto.randomUUID(), type, table, data, timestamp: Date.now() }
+        payload: { 
+          id: crypto.randomUUID(), 
+          type, 
+          table, 
+          data, 
+          filterColumn, 
+          filterValue: fVal, 
+          timestamp: Date.now() 
+        }
       });
     }
   };
@@ -408,8 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     
     // First delete items, then order (to handle constraints manually in queue if needed)
-    // Actually our queue processes in order, so this is safe
-    await performMutation('DELETE', 'order_items', { order_id: id }); // Special data for deletion if not cascade
+    await performMutation('DELETE', 'order_items', { order_id: id }, 'order_id', id);
     await performMutation('DELETE', 'orders', { id });
   };
 

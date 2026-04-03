@@ -42,6 +42,8 @@ export interface PendingAction {
   type: 'INSERT' | 'UPDATE' | 'DELETE';
   table: string;
   data: any;
+  filterColumn?: string;
+  filterValue?: any;
   timestamp: number;
 }
 

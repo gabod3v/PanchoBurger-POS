@@ -1,82 +1,247 @@
+import { useEffect, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, TrendingUp, ShoppingBag } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package } from 'lucide-react';
+import { DaySession, Order, OrderItem } from '@/types';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function DaySummary() {
-  const { state, resetDay } = useApp();
+  const { id } = useParams();
+  const { state, resetDay, fetchOrdersBySession, deleteOrder, addOrder } = useApp();
   const navigate = useNavigate();
-  const { currentDay, orders } = state;
+  
+  const [session, setSession] = useState<DaySession | null>(null);
+  const [sessionOrders, setSessionOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Manual Order State
+  const [isManualOrderOpen, setIsManualOrderOpen] = useState(false);
+  const [manualCustomer, setManualCustomer] = useState('');
+  const [manualItems, setManualItems] = useState<{productId: string, quantity: number}[]>([]);
 
-  const completed = orders.filter(o => o.status === 'completed');
-  const totalUSD = completed.reduce((s, o) => s + o.totalUSD, 0);
-  const totalLocal = completed.reduce((s, o) => s + o.totalLocal, 0);
+  const loadSession = async () => {
+    setLoading(true);
+    if (id) {
+      const found = state.sessions.find(s => s.id === id);
+      if (found) {
+        setSession(found);
+        const orders = await fetchOrdersBySession(id);
+        setSessionOrders(orders);
+      }
+    } else {
+      setSession(state.currentDay);
+      setSessionOrders(state.orders);
+    }
+    setLoading(false);
+  };
 
-  if (!currentDay) {
+  useEffect(() => {
+    loadSession();
+  }, [id, state.currentDay, state.orders, state.sessions]);
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (confirm('¿Estás seguro de eliminar este pedido? Esta acción no se puede deshacer.')) {
+      await deleteOrder(orderId, session?.id);
+      setSessionOrders(prev => prev.filter(o => o.id !== orderId));
+      toast.success('Pedido eliminado');
+    }
+  };
+
+  const handleAddManualItem = () => {
+    if (state.products.length > 0) {
+      setManualItems([...manualItems, { productId: state.products[0].id, quantity: 1 }]);
+    }
+  };
+
+  const handleRemoveManualItem = (index: number) => {
+    setManualItems(manualItems.filter((_, i) => i !== index));
+  };
+
+  const handleManualSubmit = async () => {
+    if (!manualCustomer.trim() || manualItems.length === 0 || !session) return;
+    
+    const items: OrderItem[] = manualItems.map(mi => {
+      const p = state.products.find(p => p.id === mi.productId)!;
+      return { product: p, quantity: mi.quantity };
+    });
+
+    await addOrder(manualCustomer.trim(), items, session.id);
+    setIsManualOrderOpen(false);
+    setManualCustomer('');
+    setManualItems([]);
+    loadSession(); // reload list
+    toast.success('Pedido cargado manualmente');
+  };
+
+  const completed = sessionOrders.filter(o => o.status === 'completed' || o.status === 'ready' || o.status === 'pending');
+  const totalUSD = completed.reduce((s, o) => s + parseFloat(o.totalUSD.toString()), 0);
+  const totalLocal = completed.reduce((s, o) => s + parseFloat(o.totalLocal.toString()), 0);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+        <Loader2 className="animate-spin text-primary mb-4" size={32} />
+        <p className="text-muted-foreground font-medium">Cargando reporte...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
     return (
       <div className="animate-slide-in text-center py-20">
         <BarChart3 size={48} className="mx-auto text-muted-foreground mb-4" />
         <h2 className="text-xl font-semibold font-display">Sin datos</h2>
-        <p className="text-muted-foreground">Abre la caja para iniciar el día.</p>
+        <p className="text-muted-foreground">Abre la caja para iniciar el día o selecciona un cierre del historial.</p>
+        <Button variant="outline" className="mt-6" onClick={() => navigate('/historial')}>
+          Ver Historial
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="animate-slide-in">
-      <h1 className="text-3xl font-bold font-display mb-2">Resumen del Día</h1>
-      <p className="text-muted-foreground mb-6">{currentDay.date} — Tasa: {currentDay.exchangeRate} Bs/$</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          {(id || !session.isOpen) && (
+            <Button variant="ghost" size="icon" onClick={() => navigate('/historial')}>
+              <ArrowLeft size={20} />
+            </Button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold font-display">
+              {id || !session.isOpen ? 'Resumen de Cierre' : 'Resumen del Día'}
+            </h1>
+            <p className="text-muted-foreground">
+              {session.date} — Tasa: {session.exchangeRate} Bs/$ • 
+              {session.isOpen ? ' (En curso)' : ' (Cerrado)'}
+            </p>
+          </div>
+        </div>
+
+        <Dialog open={isManualOrderOpen} onOpenChange={setIsManualOrderOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+              <Plus size={18} /> Cargar Faltante
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Cargar Pedido Manual</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Nombre del Cliente</label>
+                <Input placeholder="Ej. Cliente Histórico" value={manualCustomer} onChange={e => setManualCustomer(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold">Productos</label>
+                  <Button type="button" variant="ghost" size="sm" onClick={handleAddManualItem} className="h-7 text-xs gap-1">
+                    <Plus size={14} /> Añadir
+                  </Button>
+                </div>
+                <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2">
+                  {manualItems.map((item, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <Select 
+                        value={item.productId} 
+                        onValueChange={(val) => setManualItems(manualItems.map((mi, i) => i === idx ? {...mi, productId: val} : mi))}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {state.products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        className="w-20" 
+                        value={item.quantity} 
+                        onChange={e => setManualItems(manualItems.map((mi, i) => i === idx ? {...mi, quantity: parseInt(e.target.value) || 1} : mi))} 
+                      />
+                      <Button size="icon" variant="ghost" onClick={() => handleRemoveManualItem(idx)} className="text-destructive">
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleManualSubmit} disabled={!manualCustomer.trim() || manualItems.length === 0}>
+                Guardar Pedido
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <div className="pos-stat items-center">
+        <div className="pos-stat items-center border border-border/50">
           <ShoppingBag size={24} className="text-primary mb-1" />
-          <span className="text-xs text-muted-foreground">Pedidos completados</span>
+          <span className="text-xs text-muted-foreground font-medium">Pedidos completados</span>
           <span className="text-3xl font-bold font-display">{completed.length}</span>
         </div>
-        <div className="pos-stat items-center">
+        <div className="pos-stat items-center border border-border/50">
           <DollarSign size={24} className="text-success mb-1" />
-          <span className="text-xs text-muted-foreground">Total USD</span>
-          <span className="text-3xl font-bold font-display">${totalUSD.toFixed(2)}</span>
+          <span className="text-xs text-muted-foreground font-medium">Total USD</span>
+          <span className="text-3xl font-bold font-display text-success">${totalUSD.toFixed(2)}</span>
         </div>
-        <div className="pos-stat items-center">
+        <div className="pos-stat items-center border border-border/50">
           <TrendingUp size={24} className="text-warning mb-1" />
-          <span className="text-xs text-muted-foreground">Total Bs</span>
-          <span className="text-3xl font-bold font-display">{totalLocal.toFixed(2)}</span>
+          <span className="text-xs text-muted-foreground font-medium">Total Bs</span>
+          <span className="text-3xl font-bold font-display text-warning">{totalLocal.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
         </div>
       </div>
 
       {completed.length > 0 && (
-        <div className="pos-card mb-8">
-          <h2 className="font-semibold font-display mb-3">Detalle de Pedidos</h2>
+        <div className="pos-card mb-8 p-6">
+          <h2 className="font-bold text-lg font-display mb-4 flex items-center gap-2">
+            <ClipboardList className="text-muted-foreground" size={20} />
+            Detalle de Ventas
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="pb-2 pr-4">#</th>
-                  <th className="pb-2 pr-4">Cliente</th>
-                  <th className="pb-2 pr-4">Productos</th>
-                  <th className="pb-2 pr-4 text-right">USD</th>
-                  <th className="pb-2 text-right">Bs</th>
+                <tr className="border-b border-border text-left text-muted-foreground font-bold">
+                  <th className="pb-3 pr-4">#</th>
+                  <th className="pb-3 pr-4">Cliente</th>
+                  <th className="pb-3 pr-4">Productos</th>
+                  <th className="pb-3 pr-4 text-right">USD</th>
+                  <th className="pb-3 pr-4 text-right">Bs</th>
+                  <th className="pb-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {completed.map(o => (
-                  <tr key={o.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 font-bold text-primary">{o.ticketNumber}</td>
-                    <td className="py-2 pr-4">{o.customerName}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">
+                  <tr key={o.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                    <td className="py-3 pr-4 font-bold text-primary">{o.ticketNumber}</td>
+                    <td className="py-3 pr-4 font-medium">{o.customerName}</td>
+                    <td className="py-3 pr-4 text-muted-foreground italic text-xs">
                       {o.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}
                     </td>
-                    <td className="py-2 pr-4 text-right font-medium">${o.totalUSD.toFixed(2)}</td>
-                    <td className="py-2 text-right font-medium">{o.totalLocal.toFixed(2)}</td>
+                    <td className="py-3 pr-4 text-right font-bold text-success">${parseFloat(o.totalUSD.toString()).toFixed(2)}</td>
+                    <td className="py-3 pr-4 text-right font-medium">{parseFloat(o.totalLocal.toString()).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>
+                    <td className="py-3 text-right">
+                      <Button size="icon" variant="ghost" onClick={() => handleDeleteOrder(o.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                        <Trash2 size={16} />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold">
-                  <td colSpan={3} className="pt-3 text-right pr-4">Totales:</td>
-                  <td className="pt-3 text-right pr-4">${totalUSD.toFixed(2)}</td>
-                  <td className="pt-3 text-right">{totalLocal.toFixed(2)} Bs</td>
+</tbody>
+              <tfoot className="bg-muted/20">
+                <tr className="font-bold text-base">
+                  <td colSpan={3} className="py-4 text-right pr-4 uppercase tracking-tighter text-xs text-muted-foreground">Totales de Venta:</td>
+                  <td className="py-4 text-right pr-4 text-success font-display font-black">${totalUSD.toFixed(2)}</td>
+                  <td className="py-4 text-right font-display font-black text-warning">{totalLocal.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</td>
                 </tr>
               </tfoot>
             </table>
@@ -84,9 +249,9 @@ export default function DaySummary() {
         </div>
       )}
 
-      {!currentDay.isOpen && (
-        <Button size="lg" className="w-full" onClick={() => { resetDay(); navigate('/caja'); }}>
-          Iniciar Nuevo Día
+      {(!session.isOpen && !id) && (
+        <Button size="lg" className="w-full py-7 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all" onClick={() => { resetDay(); navigate('/caja'); }}>
+          Iniciar Nuevo Día de Ventas
         </Button>
       )}
     </div>

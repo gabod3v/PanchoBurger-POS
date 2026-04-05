@@ -1,4 +1,4 @@
-# 🍔 Pancho Burger POS - Quick Bite Ops
+# 🍔 Pancho Burger POS
 
 **Pancho Burger POS** es un sistema de Punto de Venta (POS) moderno y de alto rendimiento, diseñado para la eficiencia en entornos de comida rápida. Cuenta con un robusto motor de doble moneda (USD/Bs), sincronización offline-first y un panel administrativo premium.
 
@@ -15,13 +15,11 @@
 
 ## 📸 Capturas de Pantalla
 
-````carousel
-![Catálogo](public/assets/screenshots/menu.png)
-<!-- slide -->
-![Pantalla de Pedido](public/assets/screenshots/order.png)
-<!-- slide -->
-![Historial de Pedidos](public/assets/screenshots/history.png)
-````
+| 📋 Catálogo de Productos | 🛒 Pantalla de Pedido | 🕒 Historial y Detalles |
+| :---: | :---: | :---: |
+| ![Catálogo](public/assets/screenshots/menu.png) | ![Pedido](public/assets/screenshots/order.png) | ![Historial](public/assets/screenshots/history.png) |
+
+---
 
 ## 🛠️ Tecnologías Utilizadas
 

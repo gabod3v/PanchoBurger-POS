@@ -1,64 +1,64 @@
 # 🍔 Pancho Burger POS - Quick Bite Ops
 
-**Pancho Burger POS** is a modern, high-performance Point of Sale (POS) system designed for efficiency in fast-food environments. It features a robust dual-currency engine (USD/Bs), offline-first synchronization, and a premium administrative dashboard.
+**Pancho Burger POS** es un sistema de Punto de Venta (POS) moderno y de alto rendimiento, diseñado para la eficiencia en entornos de comida rápida. Cuenta con un robusto motor de doble moneda (USD/Bs), sincronización offline-first y un panel administrativo premium.
 
 ![Banner](public/assets/screenshots/menu.png)
 
-## 🚀 Key Features
+## 🚀 Características Principales
 
-- **💸 Dual-Currency Support**: Real-time conversion between USD and Bolívares (Bs.). Prices can be dynamically calculated based on the daily exchange rate or fixed in local currency.
-- **⚡ Offline-First Architecture**: Keep taking orders even without internet. The system queues all operations and syncs them automatically with Supabase once the connection is restored.
-- **📋 Order Management**: Complete order lifecycle (Pending → Ready → Completed) with detailed line-item breakdowns, unit pricing, and status tracking.
-- **💹 Cash Register Mastery**: Integrated session management that allows setting the daily exchange rate and bulk-updating prices for items fixed in local currency.
-- **📁 Menu & Categories**: Intuitive product management with category filtering and dynamic scroll areas for fast catalog navigation.
-- **🖨️ Professional Receipts**: Clean, print-ready CSS tickets for physical receipt printers.
+- **💸 Soporte Multi-Moneda**: Conversión en tiempo real entre USD y Bolívares (Bs.). Los precios pueden calcularse dinámicamente según la tasa del día o fijarse en moneda local.
+- **⚡ Arquitectura Offline-First**: Sigue tomando pedidos incluso sin internet. El sistema pone en cola todas las operaciones y las sincroniza automáticamente con Supabase una vez restaurada la conexión.
+- **📋 Gestión de Pedidos**: Ciclo de vida completo del pedido (Pendiente → Listo → Completado) con desglose detallado de productos, precios unitarios y seguimiento de estado.
+- **💹 Control de Caja**: Gestión de sesiones integrada que permite establecer la tasa de cambio diaria y actualizar masivamente los precios de los artículos fijados en bolívares.
+- **📁 Menú y Categorías**: Gestión intuitiva de productos con filtrado por categorías y áreas de desplazamiento dinámico para una navegación rápida por el catálogo.
+- **🖨️ Recibos Profesionales**: Tickets en CSS limpios y listos para imprimir en impresoras térmicas.
 
-## 📸 Screenshots
+## 📸 Capturas de Pantalla
 
 ````carousel
-![Catalog](public/assets/screenshots/menu.png)
+![Catálogo](public/assets/screenshots/menu.png)
 <!-- slide -->
-![Order Screen](public/assets/screenshots/order.png)
+![Pantalla de Pedido](public/assets/screenshots/order.png)
 <!-- slide -->
-![Order History](public/assets/screenshots/history.png)
+![Historial de Pedidos](public/assets/screenshots/history.png)
 ````
 
-## 🛠️ Tech Stack
+## 🛠️ Tecnologías Utilizadas
 
 - **Frontend**: React 18, Vite, TypeScript
-- **Styling**: Tailwind CSS, Shadcn UI, Lucid Icons
-- **Backend & Auth**: Supabase (PostgreSQL)
-- **State Management**: React Context + Reducer with LocalStorage persistence
-- **Sync**: Custom Sync Queue for Offline Support
+- **Estilos**: Tailwind CSS, Shadcn UI, Lucid Icons
+- **Backend y Auth**: Supabase (PostgreSQL)
+- **Estado Global**: React Context + Reducer con persistencia en LocalStorage
+- **Sincronización**: Cola de sincronización personalizada para soporte offline
 
-## 📦 Installation & Setup
+## 📦 Instalación y Configuración
 
-1. **Clone the repository**
+1. **Clonar el repositorio**
    ```bash
    git clone https://github.com/gabod3v/quick-bite-ops.git
    cd quick-bite-ops
    ```
 
-2. **Install dependencies**
+2. **Instalar dependencias**
    ```bash
    npm install
    ```
 
-3. **Environment Configuration**
-   Create a `.env` file with your Supabase credentials:
+3. **Configuración del Entorno**
+   Crea un archivo `.env` con tus credenciales de Supabase:
    ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_key
+   VITE_SUPABASE_URL=tu_url_de_supabase
+   VITE_SUPABASE_ANON_KEY=tu_clave_de_supabase
    ```
 
-4. **Run Development Server**
+4. **Ejecutar Servidor de Desarrollo**
    ```bash
    npm run dev
    ```
 
-## 🤝 Contributing
+## 🤝 Contribuciones
 
-Contributions are welcome! Feel free to open an issue or submit a pull request for improvements.
+¡Las contribuciones son bienvenidas! Siéntete libre de abrir un issue o enviar un pull request con mejoras.
 
 ---
-Developed with ❤️ by **gabod3v**
+Desarrollado con ❤️ por **gabod3v**

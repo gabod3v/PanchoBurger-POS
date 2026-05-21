@@ -64,13 +64,18 @@ export default function MenuPage() {
                   </div>
                 )}
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
                     <p className="font-semibold text-lg tracking-tight">{p.name}</p>
+                    {p.soldByWeight && (
+                      <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-info/10 text-info border border-info/20">
+                        kg
+                      </span>
+                    )}
                     <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                       {p.category || 'Otros'}
                     </span>
                   </div>
-                  <p className="font-medium text-secondary">${p.price.toFixed(2)} USD</p>
+                  <p className="font-medium text-secondary">{p.soldByWeight ? `$${p.price.toFixed(2)} /kg` : `$${p.price.toFixed(2)} USD`}</p>
                 </div>
               </div>
               <div className="flex gap-2 self-end sm:self-auto border-t sm:border-t-0 border-border/30 pt-3 sm:pt-0 w-full sm:w-auto">

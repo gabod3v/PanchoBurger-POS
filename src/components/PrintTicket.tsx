@@ -1,4 +1,5 @@
 import { Order } from '@/types';
+import { formatQty } from '@/lib/format';
 
 interface Props {
     order: Order | null;
@@ -50,7 +51,7 @@ export default function PrintTicket({ order }: Props) {
                 <tbody>
                     {order.items.map((i, idx) => (
                         <tr key={idx}>
-                            <td className="pt-2 align-top">{i.quantity}</td>
+                            <td className="pt-2 align-top">{formatQty(i.quantity, i.product.soldByWeight)}</td>
                             <td className="pt-2 align-top break-words max-w-[120px]">{i.product.name}</td>
                             <td className="pt-2 align-top text-right">${(i.product.price * i.quantity).toFixed(2)}</td>
                         </tr>

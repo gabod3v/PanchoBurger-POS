@@ -4,6 +4,7 @@ export interface Product {
   price: number; // Final USD price (calculated if is_price_in_bs is true)
   price_bs?: number; // Fixed Bs price
   is_price_in_bs?: boolean;
+  soldByWeight?: boolean; // true = sold per kilo (quantity = kgs, price = price per kg)
   category: string;
   image_url?: string;
 }

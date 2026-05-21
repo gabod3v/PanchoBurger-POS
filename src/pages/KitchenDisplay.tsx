@@ -2,6 +2,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { OrderStatus } from '@/types';
+import { formatQty } from '@/lib/format';
 
 export default function KitchenDisplay() {
     const { state, updateOrderStatus } = useApp();
@@ -27,8 +28,8 @@ export default function KitchenDisplay() {
                 <ul className="space-y-3">
                     {o.items.map((i, idx) => (
                         <li key={idx} className="text-2xl font-medium flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg shrink-0">
-                                {i.quantity}
+                            <span className="w-auto min-w-[3rem] h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 px-3">
+                                {formatQty(i.quantity, i.product.soldByWeight)}
                             </span>
                             <span>{i.product.name}</span>
                         </li>

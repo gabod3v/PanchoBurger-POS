@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package, Banknote, CreditCard, Smartphone, Coins, AlertCircle } from 'lucide-react';
 import { DaySession, Order, OrderItem, PaymentMethod } from '@/types';
+import { formatQty, formatItemSummary } from '@/lib/format';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -179,13 +180,23 @@ export default function DaySummary() {
                           {state.products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        className="w-20" 
-                        value={item.quantity} 
-                        onChange={e => setManualItems(manualItems.map((mi, i) => i === idx ? {...mi, quantity: parseInt(e.target.value) || 1} : mi))} 
-                      />
+                      {(() => {
+                        const selectedProduct = state.products.find(p => p.id === item.productId);
+                        const isWeight = selectedProduct?.soldByWeight;
+                        return (
+                          <>
+                            <Input 
+                              type="number" 
+                              min={isWeight ? 0 : 1}
+                              step={isWeight ? 0.01 : 1}
+                              className="w-20" 
+                              value={item.quantity} 
+                              onChange={e => setManualItems(manualItems.map((mi, i) => i === idx ? {...mi, quantity: parseFloat(e.target.value) || (isWeight ? 0 : 1)} : mi))} 
+                            />
+                            {isWeight && <span className="text-xs font-bold text-muted-foreground">kg</span>}
+                          </>
+                        );
+                      })()}
                       <Button size="icon" variant="ghost" onClick={() => handleRemoveManualItem(idx)} className="text-destructive">
                         <Trash2 size={16} />
                       </Button>
@@ -318,7 +329,7 @@ export default function DaySummary() {
                       )}
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground italic text-xs">
-                      {o.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}
+                      {o.items.map(i => formatItemSummary(i.quantity, i.product.name, i.product.soldByWeight)).join(', ')}
                     </td>
                     <td className="py-3 pr-4 text-right font-bold text-success">${parseFloat(o.totalUSD.toString()).toFixed(2)}</td>
                     <td className="py-3 pr-4 text-right font-medium">{parseFloat(o.totalLocal.toString()).toLocaleString('es-VE', { minimumFractionDigits: 2 })}</td>

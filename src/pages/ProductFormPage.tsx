@@ -20,6 +20,7 @@ export default function ProductFormPage() {
     const [category, setCategory] = useState(state.categories[0]?.name || 'Otros');
     const [imageUrl, setImageUrl] = useState('');
     const [isDragging, setIsDragging] = useState(false);
+    const [soldByWeight, setSoldByWeight] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -31,6 +32,7 @@ export default function ProductFormPage() {
                 setIsPriceInBs(p.is_price_in_bs || false);
                 setCategory(p.category || 'Otros');
                 setImageUrl(p.image_url || '');
+                setSoldByWeight(p.soldByWeight || false);
             } else {
                 toast.error('Producto no encontrado');
                 navigate('/menu');
@@ -87,10 +89,10 @@ export default function ProductFormPage() {
         }
 
         if (id) {
-            updateProduct(id, name.trim(), finalPrice, category, imageUrl || undefined, finalPriceBs, isPriceInBs);
+            updateProduct(id, name.trim(), finalPrice, category, imageUrl || undefined, finalPriceBs, isPriceInBs, soldByWeight);
             toast.success('Producto actualizado');
         } else {
-            addProduct(name.trim(), finalPrice, category, imageUrl || undefined, finalPriceBs, isPriceInBs);
+            addProduct(name.trim(), finalPrice, category, imageUrl || undefined, finalPriceBs, isPriceInBs, soldByWeight);
             toast.success('Producto creado');
         }
         navigate('/menu');
@@ -148,8 +150,21 @@ export default function ProductFormPage() {
                           </div>
                         </div>
                         <div>
+                          <label className="text-sm font-semibold mb-1.5 block">Venta por peso</label>
+                          <div className="flex items-center gap-2 h-10 px-3 bg-muted/30 rounded-md border border-input">
+                            <input 
+                              type="checkbox" 
+                              id="soldByWeight" 
+                              checked={soldByWeight} 
+                              onChange={e => setSoldByWeight(e.target.checked)}
+                              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="soldByWeight" className="text-sm font-medium cursor-pointer">Venta por kilo</label>
+                          </div>
+                        </div>
+                        <div>
                             <label className="text-sm font-semibold mb-1.5 block">
-                              {isPriceInBs ? 'Precio (Bs)' : 'Precio (USD)'}
+                              {isPriceInBs ? 'Precio (Bs)' : soldByWeight ? 'Precio por kg (USD)' : 'Precio (USD)'}
                             </label>
                             <Input
                                 type="number"

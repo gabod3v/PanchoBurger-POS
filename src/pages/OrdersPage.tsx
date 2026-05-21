@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { ClipboardList, ChevronRight, Printer, Trash2, Pencil, Clock, Banknote, CreditCard, Smartphone, Coins, AlertCircle } from 'lucide-react';
 import { OrderStatus, Order, PaymentMethod } from '@/types';
+import { formatQty, formatUnitPrice } from '@/lib/format';
 import PrintTicket from '@/components/PrintTicket';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -120,10 +121,10 @@ export default function OrdersPage() {
                 {o.items.map((i, index) => (
                   <div key={index} className="flex justify-between items-center text-sm py-2 border-b border-border/5 last:border-0 px-1 hover:bg-muted/30 transition-colors rounded-md">
                     <div className="flex items-center gap-3">
-                      <span className="bg-muted text-muted-foreground font-black text-[10px] w-6 h-6 rounded flex items-center justify-center shrink-0">{i.quantity}</span>
+                      <span className="bg-muted text-muted-foreground font-black text-[10px] w-10 h-6 rounded flex items-center justify-center shrink-0">{formatQty(i.quantity, i.product.soldByWeight)}</span>
                       <div className="flex flex-col">
                         <span className="font-bold text-foreground/90">{i.product.name}</span>
-                        <span className="text-[10px] text-muted-foreground font-medium">${i.product.price.toFixed(2)} c/u</span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{formatUnitPrice(i.product.price, i.product.soldByWeight)}</span>
                       </div>
                     </div>
                     <span className="font-bold text-foreground/80">${(i.product.price * i.quantity).toFixed(2)}</span>

@@ -109,8 +109,8 @@ function reducer(state: AppState, action: Action): AppState {
 
 interface AppContextType {
   state: AppState;
-  addProduct: (name: string, price: number, category: string, image_url?: string, price_bs?: number, is_price_in_bs?: boolean) => void;
-  updateProduct: (id: string, name: string, price: number, category: string, image_url?: string, price_bs?: number, is_price_in_bs?: boolean) => void;
+  addProduct: (name: string, price: number, category: string, image_url?: string, price_bs?: number, is_price_in_bs?: boolean, soldByWeight?: boolean) => void;
+  updateProduct: (id: string, name: string, price: number, category: string, image_url?: string, price_bs?: number, is_price_in_bs?: boolean, soldByWeight?: boolean) => void;
   deleteProduct: (id: string) => void;
   addCategory: (name: string) => void;
   updateCategory: (id: string, name: string) => void;
@@ -213,13 +213,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               createdAt: o.created_at,
               items: o.items.map((i: any) => ({
                 quantity: i.quantity,
-                product: {
-                  id: i.product.id,
-                  name: i.product.name,
-                  price: parseFloat(i.product.price),
-                  category: i.product.category,
-                  image_url: i.product.image_url
-                }
+                  product: {
+                    id: i.product.id,
+                    name: i.product.name,
+                    price: parseFloat(i.product.price),
+                    category: i.product.category,
+                    image_url: i.product.image_url,
+                    soldByWeight: i.product.sold_by_weight || false,
+                  }
               }))
             }));
           }
@@ -232,6 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           price: parseFloat(p.price), 
           price_bs: p.price_bs ? parseFloat(p.price_bs) : 0,
           is_price_in_bs: p.is_price_in_bs,
+          soldByWeight: p.sold_by_weight || false,
           category: p.category, 
           image_url: p.image_url
         })) || [];
@@ -293,8 +295,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addProduct = async (name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false) => {
-    const newProduct: Product = { id: crypto.randomUUID(), name, price, category, image_url, price_bs, is_price_in_bs };
+  const addProduct = async (name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false, soldByWeight: boolean = false) => {
+    const newProduct: Product = { id: crypto.randomUUID(), name, price, category, image_url, price_bs, is_price_in_bs, soldByWeight };
     dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
     await performMutation('INSERT', 'productos', {
       id: newProduct.id,
@@ -303,12 +305,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       category,
       image_url,
       price_bs,
-      is_price_in_bs
+      is_price_in_bs,
+      sold_by_weight: soldByWeight
     });
   };
 
-  const updateProduct = async (id: string, name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false) => {
-    const updated: Product = { id, name, price, category, image_url, price_bs, is_price_in_bs };
+  const updateProduct = async (id: string, name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false, soldByWeight: boolean = false) => {
+    const updated: Product = { id, name, price, category, image_url, price_bs, is_price_in_bs, soldByWeight };
     dispatch({ type: 'UPDATE_PRODUCT', payload: updated });
     await performMutation('UPDATE', 'productos', {
       id,
@@ -317,7 +320,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       category,
       image_url,
       price_bs,
-      is_price_in_bs
+      is_price_in_bs,
+      sold_by_weight: soldByWeight
     });
   };
 
@@ -358,7 +362,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     for (const p of bsProducts) {
       const currentBsPrice = customBsPrices?.[p.id] ?? (p.price_bs || 0);
       const newPriceUSD = currentBsPrice / exchangeRate;
-      await updateProduct(p.id, p.name, newPriceUSD, p.category, p.image_url, currentBsPrice, true);
+      await updateProduct(p.id, p.name, newPriceUSD, p.category, p.image_url, currentBsPrice, true, p.soldByWeight || false);
     }
 
     dispatch({ type: 'OPEN_DAY', payload: newDay });
@@ -523,7 +527,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           name: i.product.name,
           price: parseFloat(i.product.price),
           category: i.product.category,
-          image_url: i.product.image_url
+          image_url: i.product.image_url,
+          soldByWeight: i.product.sold_by_weight || false,
         }
       }))
     }));

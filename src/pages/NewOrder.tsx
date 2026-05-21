@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft, Banknote, CreditCard, Smartphone, Coins, Clock } from 'lucide-react';
+import WeightStepper from '@/components/WeightStepper';
 import { OrderItem, PaymentMethod, PaymentStatus } from '@/types';
+import { formatQty, formatUnitPrice } from '@/lib/format';
 import { toast } from 'sonner';
 
 const paymentMethods: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
@@ -286,15 +288,22 @@ export default function NewOrder() {
 
                     <div className="flex items-center justify-between border-t border-border/30 pt-3">
                       <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">{p.category || 'Otros'}</span>
-                      <div className="flex items-center gap-1.5 bg-muted/30 rounded-full p-1 border border-border/50">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background hover:shadow-sm" onClick={() => updateQty(p.id, -1)} disabled={qty === 0}>
-                          <Minus size={14} />
-                        </Button>
-                        <span className="w-6 text-center font-bold text-sm">{qty}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background hover:shadow-sm" onClick={() => updateQty(p.id, 1)}>
-                          <Plus size={14} />
-                        </Button>
-                      </div>
+                      {p.soldByWeight ? (
+                        <WeightStepper
+                          value={qty}
+                          onChange={(val) => updateQty(p.id, val - qty)}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1.5 bg-muted/30 rounded-full p-1 border border-border/50">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background hover:shadow-sm" onClick={() => updateQty(p.id, -1)} disabled={qty === 0}>
+                            <Minus size={14} />
+                          </Button>
+                          <span className="w-6 text-center font-bold text-sm">{qty}</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background hover:shadow-sm" onClick={() => updateQty(p.id, 1)}>
+                            <Plus size={14} />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -321,11 +330,14 @@ export default function NewOrder() {
                 {orderItems.map(i => (
                   <div key={i.product.id} className="flex justify-between items-start text-sm group">
                     <div className="flex items-start gap-3">
-                      <span className="font-bold text-muted-foreground bg-muted w-6 h-6 rounded-md flex items-center justify-center text-xs shrink-0">{i.quantity}</span>
+                      <span className="font-bold text-muted-foreground bg-muted w-8 h-6 rounded-md flex items-center justify-center text-xs shrink-0">{formatQty(i.quantity, i.product.soldByWeight)}</span>
                       <div className="flex flex-col">
                         <span className="font-medium group-hover:text-primary transition-colors">{i.product.name}</span>
                         {i.product.is_price_in_bs && (
                           <span className="text-[10px] text-muted-foreground/80 font-bold">{(i.product.price_bs || 0) * i.quantity} Bs</span>
+                        )}
+                        {i.product.soldByWeight && (
+                          <span className="text-[10px] text-muted-foreground/80 font-medium">{formatUnitPrice(i.product.price, true)}</span>
                         )}
                       </div>
                     </div>

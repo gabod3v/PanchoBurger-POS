@@ -127,7 +127,7 @@ export default function ProductFormPage() {
                                     <SelectValue placeholder="Categoría" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {state.categories.map(cat => (
+                                    {state.categories.filter(c => c.name !== 'Otros').map(cat => (
                                         <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                                     ))}
                                     <SelectItem value="Otros">Otros</SelectItem>

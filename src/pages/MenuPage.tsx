@@ -28,7 +28,7 @@ export default function MenuPage() {
 
       <ScrollArea className="w-full whitespace-nowrap mb-6 pb-3">
         <div className="flex w-max space-x-3">
-          {['Todas', ...state.categories.map(c => c.name), 'Otros'].map(cat => {
+          {['Todas', ...state.categories.map(c => c.name).filter(c => c !== 'Otros'), 'Otros'].map(cat => {
             const isActive = activeCategory === cat;
             return (
               <Button

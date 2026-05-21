@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import KitchenDisplay from "./pages/KitchenDisplay";
 import CategoriesPage from "./pages/CategoriesPage";
 import HistoryPage from "./pages/HistoryPage";
+import PendingPayments from "./pages/PendingPayments";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
                   <Route path="/resumen/:id" element={<DaySummary />} />
                   <Route path="/categorias" element={<CategoriesPage />} />
                   <Route path="/historial" element={<HistoryPage />} />
+                  <Route path="/pendientes" element={<PendingPayments />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>

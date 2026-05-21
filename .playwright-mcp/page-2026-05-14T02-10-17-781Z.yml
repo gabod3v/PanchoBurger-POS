@@ -1,0 +1,53 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - heading "Pedidos" [level=1] [ref=e15]
+        - heading "Completados (1)" [level=2] [ref=e16]
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - generic [ref=e21]:
+              - generic [ref=e22]: "#1"
+              - generic [ref=e23]:
+                - heading "Juan Pérez (debe)" [level=3] [ref=e24]
+                - paragraph [ref=e25]: 10:08 p. m.
+            - generic [ref=e26]:
+              - generic [ref=e27]: Completado
+              - generic [ref=e28]:
+                - img [ref=e29]
+                - text: Pagomóvil
+              - generic [ref=e31]:
+                - button "Imprimir" [ref=e32] [cursor=pointer]:
+                  - img
+                - button "Editar" [ref=e33] [cursor=pointer]:
+                  - img
+                - button "Eliminar" [ref=e34] [cursor=pointer]:
+                  - img
+          - generic [ref=e35]:
+            - paragraph [ref=e36]: Detalle del Pedido
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - generic [ref=e39]: "1"
+                - generic [ref=e40]:
+                  - generic [ref=e41]: Hamburguesa BBQ
+                  - generic [ref=e42]: $6.50 c/u
+              - generic [ref=e43]: $6.50
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]: Total a Cobrar
+              - generic [ref=e47]:
+                - generic [ref=e48]: $6.50
+                - generic [ref=e49]: USD
+            - generic [ref=e50]:
+              - generic [ref=e51]: Equivalente en Bs
+              - generic [ref=e52]: 325.00 Bs

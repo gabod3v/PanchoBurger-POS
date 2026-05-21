@@ -1,0 +1,57 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - heading "Dashboard" [level=1] [ref=e15]
+          - paragraph [ref=e16]: "Caja abierta — 2026-05-14T02:08:59.970Z — Tasa: 50 Bs/$"
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: Pendientes
+            - generic [ref=e20]: "0"
+          - generic [ref=e21]:
+            - generic [ref=e22]: Listos
+            - generic [ref=e23]: "0"
+          - generic [ref=e24]:
+            - generic [ref=e25]: Completados
+            - generic [ref=e26]: "1"
+          - generic [ref=e27]:
+            - generic [ref=e28]: Vendido (USD)
+            - generic [ref=e29]: $6.50
+        - generic [ref=e30]:
+          - img [ref=e31]
+          - generic [ref=e33]:
+            - paragraph [ref=e34]: Total vendido en Bs
+            - paragraph [ref=e35]: 325.00 Bs
+        - heading "Acciones rápidas" [level=2] [ref=e36]
+        - generic [ref=e37]:
+          - link "Nuevo Pedido" [ref=e38] [cursor=pointer]:
+            - /url: /nuevo-pedido
+            - img [ref=e39]
+            - generic [ref=e41]: Nuevo Pedido
+          - link "Ver Pedidos" [ref=e42] [cursor=pointer]:
+            - /url: /pedidos
+            - img [ref=e43]
+            - generic [ref=e46]: Ver Pedidos
+          - link "Caja" [ref=e47] [cursor=pointer]:
+            - /url: /caja
+            - img [ref=e48]
+            - generic [ref=e51]: Caja
+          - link "Menú" [ref=e52] [cursor=pointer]:
+            - /url: /menu
+            - img [ref=e53]
+            - generic [ref=e58]: Menú
+          - link "Resumen del Día" [ref=e59] [cursor=pointer]:
+            - /url: /resumen
+            - img [ref=e60]
+            - generic [ref=e62]: Resumen del Día

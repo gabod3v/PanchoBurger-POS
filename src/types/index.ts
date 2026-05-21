@@ -15,6 +15,10 @@ export interface OrderItem {
 
 export type OrderStatus = 'pending' | 'ready' | 'completed';
 
+export type PaymentStatus = 'pending' | 'paid';
+
+export type PaymentMethod = 'pagomovil' | 'efectivo_bs' | 'efectivo_usd' | 'punto';
+
 export interface Order {
   id: string;
   ticketNumber: number;
@@ -23,6 +27,10 @@ export interface Order {
   totalUSD: number;
   totalLocal: number;
   status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
+  paidAt?: string;
   createdAt: string;
 }
 

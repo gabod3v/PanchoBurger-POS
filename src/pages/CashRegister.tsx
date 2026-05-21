@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lock, Unlock, AlertTriangle } from 'lucide-react';
+import { Lock, Unlock, AlertTriangle, Clock, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,29 +14,89 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Order, PaymentMethod } from '@/types';
+import { toast } from 'sonner';
 
 export default function CashRegister() {
-  const { state, openDay, closeDay } = useApp();
+  const { state, openDay, closeDay, fetchOrdersBySession, registerPayment } = useApp();
   const [rate, setRate] = useState('');
-  const [step, setStep] = useState(1); // 1: Tasa, 2: Precios en Bs
+  const [step, setStep] = useState(1); // 1: Tasa, 2: Precios en Bs, 3: Pendientes
   const [bsPrices, setBsPrices] = useState<Record<string, number>>({});
-  const { currentDay, products } = state;
+  const [pendingFromPreviousDays, setPendingFromPreviousDays] = useState<Order[]>([]);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const { currentDay, products, sessions } = state;
+
+  const [fetchingRate, setFetchingRate] = useState(false);
+
+  // Auto-fetch BCV rate on mount
+  useEffect(() => {
+    const fetchRate = async () => {
+      if (rate) return; // don't overwrite if user already typed
+      setFetchingRate(true);
+      try {
+        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        const data = await res.json();
+        if (data?.promedio && data.promedio > 0) {
+          setRate(data.promedio.toString());
+        }
+      } catch (e) {
+        console.warn('No se pudo obtener la tasa BCV', e);
+      } finally {
+        setFetchingRate(false);
+      }
+    };
+    fetchRate();
+  }, []);
 
   const bsProducts = products.filter(p => p.is_price_in_bs);
+
+  // Cargar pedidos pendientes de días anteriores al intentar abrir caja
+  const loadPendingFromPreviousDays = async () => {
+    const allPending: Order[] = [];
+    const previousSessions = sessions.filter(s => s.id !== currentDay?.id);
+    
+    for (const session of previousSessions) {
+      const orders = await fetchOrdersBySession(session.id);
+      const pending = orders.filter(o => o.paymentStatus === 'pending');
+      allPending.push(...pending);
+    }
+    
+    setPendingFromPreviousDays(allPending);
+    if (allPending.length > 0) {
+      setShowPendingModal(true);
+    }
+  };
 
   const startOpen = (e: React.FormEvent) => {
     e.preventDefault();
     const r = parseFloat(rate);
     if (r <= 0) return;
 
+    // Verificar si hay pendientes de días anteriores
+    loadPendingFromPreviousDays();
+    
     if (bsProducts.length > 0) {
       const initialPrices: Record<string, number> = {};
       bsProducts.forEach(p => initialPrices[p.id] = p.price_bs || 0);
       setBsPrices(initialPrices);
       setStep(2);
     } else {
-      openDay(r);
+      if (pendingFromPreviousDays.length > 0) {
+        setShowPendingModal(true);
+      } else {
+        openDay(r);
+        setRate('');
+      }
+    }
+  };
+
+  const handleOpenWithPendingCheck = () => {
+    if (pendingFromPreviousDays.length > 0) {
+      setShowPendingModal(true);
+    } else {
+      openDay(parseFloat(rate), bsPrices);
       setRate('');
+      setStep(1);
     }
   };
 
@@ -59,18 +119,101 @@ export default function CashRegister() {
               <Unlock size={56} className="mx-auto text-muted-foreground/60 mb-6" strokeWidth={1} />
               <h2 className="text-2xl font-bold font-display mb-2 tracking-tight">Caja Cerrada</h2>
               <p className="text-muted-foreground font-medium mb-8">Ingresa la tasa de cambio del día para comenzar a tomar pedidos.</p>
+              {fetchingRate && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4 animate-pulse">
+                  <Loader2 className="animate-spin" size={16} />
+                  Consultando tasa BCV...
+                </div>
+              )}
+              {!fetchingRate && rate && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4">
+                  <span>💰 Tasa BCV actual</span>
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      setFetchingRate(true);
+                      try {
+                        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                        const data = await res.json();
+                        if (data?.promedio && data.promedio > 0) setRate(data.promedio.toString());
+                      } catch (e) { console.warn(e); }
+                      setFetchingRate(false);
+                    }}
+                    className="text-primary hover:text-primary/80 transition-colors"
+                    title="Actualizar tasa"
+                  >
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
+              )}
               <form onSubmit={startOpen} className="flex gap-3">
                 <Input
                   type="number"
                   step="0.0001"
                   min="0"
-                  placeholder="Ej: 36.5412"
+                  placeholder={fetchingRate ? 'Consultando...' : 'Ej: 36.5412'}
                   value={rate}
                   onChange={e => setRate(e.target.value)}
                   className="flex-1 text-lg py-6 text-center font-bold tracking-widest bg-muted/30"
                 />
-                <Button type="submit" size="lg" className="px-8 font-bold tracking-wide transition-all shadow-sm">Abrir Caja</Button>
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="px-8 font-bold tracking-wide transition-all shadow-sm"
+                  onClick={() => {
+                    if (pendingFromPreviousDays.length > 0) {
+                      setShowPendingModal(true);
+                    }
+                  }}
+                >
+                  Abrir Caja
+                </Button>
               </form>
+
+              {/* Modal de pendientes de días anteriores */}
+              {showPendingModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <div className="pos-card max-w-lg w-full p-6 max-h-[80vh] overflow-y-auto">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Clock className="text-warning" size={24} />
+                      <h2 className="text-xl font-bold font-display">Pedidos Pendientes</h2>
+                    </div>
+                    <p className="text-muted-foreground mb-4">
+                      Tienes {pendingFromPreviousDays.length} pedido{pendingFromPreviousDays.length !== 1 ? 's' : ''} pendiente{pendingFromPreviousDays.length !== 1 ? 's' : ''} de días anteriores.
+                    </p>
+                    
+                    <div className="space-y-2 mb-6 max-h-[300px] overflow-y-auto">
+                      {pendingFromPreviousDays.map(order => (
+                        <div key={order.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border/50">
+                          <div>
+                            <p className="font-semibold">Ticket #{order.ticketNumber}</p>
+                            <p className="text-sm text-muted-foreground">{order.customerName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleDateString('es-VE')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-warning">${order.totalUSD.toFixed(2)}</p>
+                            <p className="text-sm text-muted-foreground">{order.totalLocal.toFixed(2)} Bs</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button variant="outline" onClick={() => setShowPendingModal(false)} className="flex-1">
+                        Después
+                      </Button>
+                      <Button onClick={() => {
+                        setShowPendingModal(false);
+                        window.location.href = '/pendientes';
+                      }} className="flex-1">
+                        Registrar Pagos
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="space-y-6">

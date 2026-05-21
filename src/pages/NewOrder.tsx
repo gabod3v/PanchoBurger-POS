@@ -4,9 +4,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft } from 'lucide-react';
-import { OrderItem } from '@/types';
+import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft, Banknote, CreditCard, Smartphone, Coins, Clock } from 'lucide-react';
+import { OrderItem, PaymentMethod, PaymentStatus } from '@/types';
 import { toast } from 'sonner';
+
+const paymentMethods: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
+  { value: 'pagomovil', label: 'Pagomóvil', icon: <Smartphone size={18} /> },
+  { value: 'efectivo_bs', label: 'Efectivo Bs', icon: <Coins size={18} /> },
+  { value: 'efectivo_usd', label: 'Efectivo $', icon: <Banknote size={18} /> },
+  { value: 'punto', label: 'Punto', icon: <CreditCard size={18} /> },
+];
 
 export default function NewOrder() {
   const { state, addOrder, deleteOrder } = useApp();
@@ -19,6 +26,9 @@ export default function NewOrder() {
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [items, setItems] = useState<Record<string, number>>({});
   const [originalTicket, setOriginalTicket] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo_bs');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [willPayNow, setWillPayNow] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currentDay, products } = state;
@@ -38,6 +48,7 @@ export default function NewOrder() {
       if (order) {
         setCustomerName(order.customerName);
         setOriginalTicket(order.ticketNumber);
+        setPaymentMethod(order.paymentMethod || 'efectivo_bs');
         const cartItems: Record<string, number> = {};
         order.items.forEach(i => {
           cartItems[i.product.id] = i.quantity;
@@ -110,11 +121,14 @@ export default function NewOrder() {
         customerName.trim(), 
         orderItems, 
         state.currentDay?.id || undefined, 
-        originalTicket || undefined
+        originalTicket || undefined,
+        willPayNow ? 'paid' : 'pending',
+        willPayNow ? paymentMethod : undefined,
+        willPayNow ? paymentReference : undefined
       );
 
       toast.success(editId ? `Pedido #${originalTicket} actualizado` : `Pedido #${state.nextTicket} creado`, {
-        description: `Cliente: ${customerName.trim()}`,
+        description: willPayNow ? `Pagado con ${paymentMethod}` : 'Pago pendiente',
       });
 
       if (editId) {
@@ -123,6 +137,9 @@ export default function NewOrder() {
         setCustomerName('');
         setItems({});
         setOriginalTicket(null);
+        setWillPayNow(true);
+        setPaymentMethod('efectivo_bs');
+        setPaymentReference('');
       }
     } catch (error) {
       console.error('Error saving order:', error);
@@ -171,9 +188,62 @@ export default function NewOrder() {
             />
           </div>
 
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setWillPayNow(!willPayNow)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all font-medium w-full ${
+                willPayNow
+                  ? 'bg-success/10 border-success/30 text-success'
+                  : 'bg-warning/10 border-warning/30 text-warning'
+              }`}
+            >
+              {willPayNow ? <Banknote size={20} /> : <Clock size={20} />}
+              <span>{willPayNow ? 'El cliente paga ahora' : 'El cliente paga después'}</span>
+            </button>
+          </div>
+
+          {willPayNow && (
+            <>
+              <div className="mb-6">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Método de Pago</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {paymentMethods.map(pm => (
+                    <button
+                      key={pm.value}
+                      type="button"
+                      onClick={() => setPaymentMethod(pm.value)}
+                      className={`flex items-center justify-center gap-2 py-3 px-2 rounded-lg border transition-all font-medium text-sm ${
+                        paymentMethod === pm.value
+                          ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                          : 'bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                      }`}
+                    >
+                      {pm.icon}
+                      <span>{pm.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {paymentMethod === 'pagomovil' && (
+                <div className="mb-6">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Referencia (últimos 4 dígitos)</label>
+                  <Input
+                    placeholder="Ej: 1234"
+                    value={paymentReference}
+                    onChange={e => setPaymentReference(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    maxLength={4}
+                    className="w-32"
+                  />
+                </div>
+              )}
+            </>
+          )}
+
           <ScrollArea className="w-full whitespace-nowrap mb-8 pb-3">
             <div className="flex w-max space-x-3">
-              {['Todas', ...state.categories.map(c => c.name), 'Otros'].map(cat => {
+              {['Todas', ...state.categories.map(c => c.name).filter(c => c !== 'Otros'), 'Otros'].map(cat => {
                 const isActive = activeCategory === cat;
                 return (
                   <Button

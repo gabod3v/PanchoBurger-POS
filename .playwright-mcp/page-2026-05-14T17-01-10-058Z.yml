@@ -1,0 +1,52 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - heading "Dashboard" [level=1] [ref=e15]
+          - paragraph [ref=e16]: Caja cerrada. Abre la caja para comenzar.
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - generic [ref=e19]: Pendientes
+            - generic [ref=e20]: "0"
+          - generic [ref=e21]:
+            - generic [ref=e22]: Listos
+            - generic [ref=e23]: "0"
+          - generic [ref=e24]:
+            - generic [ref=e25]: Completados
+            - generic [ref=e26]: "0"
+          - generic [ref=e27]:
+            - generic [ref=e28]: Vendido (USD)
+            - generic [ref=e29]: $0.00
+        - heading "Acciones rápidas" [level=2] [ref=e30]
+        - generic [ref=e31]:
+          - link "Nuevo Pedido" [ref=e32] [cursor=pointer]:
+            - /url: /nuevo-pedido
+            - img [ref=e33]
+            - generic [ref=e35]: Nuevo Pedido
+          - link "Ver Pedidos" [ref=e36] [cursor=pointer]:
+            - /url: /pedidos
+            - img [ref=e37]
+            - generic [ref=e40]: Ver Pedidos
+          - link "Caja" [ref=e41] [cursor=pointer]:
+            - /url: /caja
+            - img [ref=e42]
+            - generic [ref=e45]: Caja
+          - link "Menú" [ref=e46] [cursor=pointer]:
+            - /url: /menu
+            - img [ref=e47]
+            - generic [ref=e52]: Menú
+          - link "Resumen del Día" [ref=e53] [cursor=pointer]:
+            - /url: /resumen
+            - img [ref=e54]
+            - generic [ref=e56]: Resumen del Día

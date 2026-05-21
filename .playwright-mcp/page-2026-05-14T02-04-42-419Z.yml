@@ -1,0 +1,22 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - heading "Caja del Día" [level=1] [ref=e15]
+        - generic [ref=e16]:
+          - img [ref=e17]
+          - heading "Caja Cerrada" [level=2] [ref=e20]
+          - paragraph [ref=e21]: Ingresa la tasa de cambio del día para comenzar a tomar pedidos.
+          - generic [ref=e22]:
+            - spinbutton [ref=e23]
+            - button "Abrir Caja" [ref=e24] [cursor=pointer]

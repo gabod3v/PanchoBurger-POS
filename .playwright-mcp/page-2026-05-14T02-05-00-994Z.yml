@@ -1,0 +1,73 @@
+- generic:
+  - generic:
+    - list
+    - region "Notifications alt+T"
+    - generic:
+      - generic:
+        - banner:
+          - generic:
+            - button [expanded]:
+              - img
+            - generic:
+              - img
+              - generic: Pancho Burger
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Caja del Día
+              - generic:
+                - img
+                - heading [level=2]: Caja Cerrada
+                - paragraph: Ingresa la tasa de cambio del día para comenzar a tomar pedidos.
+                - generic:
+                  - spinbutton
+                  - button: Abrir Caja
+  - dialog [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - img "Pancho Burger Logo" [ref=e29]
+        - heading "Pancho Burger" [level=1] [ref=e30]
+      - generic [ref=e31]:
+        - img [ref=e32]
+        - text: Online
+    - navigation [ref=e36]:
+      - link "Dashboard" [ref=e37] [cursor=pointer]:
+        - /url: /
+        - img [ref=e38]
+        - generic [ref=e43]: Dashboard
+      - link "Menú" [ref=e44] [cursor=pointer]:
+        - /url: /menu
+        - img [ref=e45]
+        - generic [ref=e50]: Menú
+      - link "Categorías" [ref=e51] [cursor=pointer]:
+        - /url: /categorias
+        - img [ref=e52]
+        - generic [ref=e56]: Categorías
+      - link "Historial" [ref=e57] [cursor=pointer]:
+        - /url: /historial
+        - img [ref=e58]
+        - generic [ref=e62]: Historial
+      - link "Pendientes" [ref=e63] [cursor=pointer]:
+        - /url: /pendientes
+        - img [ref=e64]
+        - generic [ref=e67]: Pendientes
+      - link "Caja" [ref=e68] [cursor=pointer]:
+        - /url: /caja
+        - img [ref=e69]
+        - generic [ref=e72]: Caja
+      - link "Nuevo Pedido" [ref=e74] [cursor=pointer]:
+        - /url: /nuevo-pedido
+        - img [ref=e75]
+        - generic [ref=e77]: Nuevo Pedido
+      - link "Pedidos" [ref=e78] [cursor=pointer]:
+        - /url: /pedidos
+        - img [ref=e79]
+        - generic [ref=e82]: Pedidos
+      - link "Resumen" [ref=e83] [cursor=pointer]:
+        - /url: /resumen
+        - img [ref=e84]
+        - generic [ref=e86]: Resumen
+    - button "Close" [active] [ref=e87] [cursor=pointer]:
+      - img [ref=e88]
+      - generic [ref=e91]: Close

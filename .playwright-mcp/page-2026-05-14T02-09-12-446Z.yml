@@ -1,0 +1,29 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - generic [ref=e15]:
+          - heading "Pedidos Pendientes" [level=1] [ref=e16]:
+            - img [ref=e17]
+            - text: Pedidos Pendientes
+          - paragraph [ref=e20]: "1 pedido sin pagar • Total: $6.50"
+        - generic [ref=e25] [cursor=pointer]:
+          - generic [ref=e26]:
+            - img [ref=e28]
+            - generic [ref=e31]:
+              - paragraph [ref=e32]: "Ticket #1"
+              - paragraph [ref=e33]: Juan Pérez (debe)
+              - paragraph [ref=e34]: 13 may., 10:08 p. m.
+          - generic [ref=e35]:
+            - paragraph [ref=e36]: $6.50
+            - paragraph [ref=e37]: 325.00 Bs

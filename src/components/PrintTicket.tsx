@@ -4,6 +4,16 @@ interface Props {
     order: Order | null;
 }
 
+const paymentMethodLabel = (method: string): string => {
+    const labels: Record<string, string> = {
+        pagomovil: 'Pagomóvil',
+        efectivo_bs: 'Efectivo Bs',
+        efectivo_usd: 'Efectivo USD',
+        punto: 'Punto',
+    };
+    return labels[method] || method;
+};
+
 export default function PrintTicket({ order }: Props) {
     if (!order) return null;
 
@@ -22,7 +32,10 @@ export default function PrintTicket({ order }: Props) {
                 <p className="font-bold text-lg mb-1">TICKET #{order.ticketNumber}</p>
                 <p>FECHA: {date}</p>
                 <p>CLIENTE: <span className="font-bold uppercase">{order.customerName}</span></p>
-                <p>ESTADO: {order.status === 'completed' ? 'PAGADO' : 'PENDIENTE'}</p>
+                <p>ESTADO: {order.paymentStatus === 'paid' ? 'PAGADO' : 'PENDIENTE'}</p>
+                {order.paymentMethod && (
+                    <p>PAGO: {paymentMethodLabel(order.paymentMethod)}{order.paymentMethod === 'pagomovil' && order.paymentReference ? ` Ref: ${order.paymentReference}` : ''}</p>
+                )}
                 <p>--------------------------------</p>
             </div>
 

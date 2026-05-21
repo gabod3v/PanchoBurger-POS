@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
-import { ClipboardList, ChevronRight, Printer, Trash2, Pencil } from 'lucide-react';
-import { OrderStatus, Order } from '@/types';
+import { ClipboardList, ChevronRight, Printer, Trash2, Pencil, Clock, Banknote, CreditCard, Smartphone, Coins, AlertCircle } from 'lucide-react';
+import { OrderStatus, Order, PaymentMethod } from '@/types';
 import PrintTicket from '@/components/PrintTicket';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,6 +23,13 @@ const badgeClass: Record<OrderStatus, string> = {
   pending: 'pos-badge-pending',
   ready: 'pos-badge-ready',
   completed: 'pos-badge-completed',
+};
+
+const paymentMethodLabels: Record<PaymentMethod, { label: string; icon: React.ReactNode }> = {
+  pagomovil: { label: 'Pagomóvil', icon: <Smartphone size={14} /> },
+  efectivo_bs: { label: 'Efectivo Bs', icon: <Coins size={14} /> },
+  efectivo_usd: { label: 'Efectivo $', icon: <Banknote size={14} /> },
+  punto: { label: 'Punto', icon: <CreditCard size={14} /> },
 };
 
 export default function OrdersPage() {
@@ -76,6 +83,24 @@ export default function OrdersPage() {
                 <span className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black ${o.status === 'pending' ? 'bg-warning/10 text-warning border border-warning/20' : o.status === 'ready' ? 'bg-info/10 text-info border border-info/20' : 'bg-success/10 text-success border border-success/20'}`}>
                   {statusLabels[o.status]}
                 </span>
+                {o.paymentStatus === 'pending' ? (
+                  <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black bg-destructive/10 text-destructive border border-destructive/20 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Sin pagar
+                  </span>
+                ) : (
+                  <>
+                    <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black bg-success/10 text-success border border-success/20 flex items-center gap-1">
+                      {paymentMethodLabels[o.paymentMethod!]?.icon}
+                      {paymentMethodLabels[o.paymentMethod!]?.label}
+                    </span>
+                    {o.paymentMethod === 'pagomovil' && o.paymentReference && (
+                      <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-full border border-border/30">
+                        Ref: {o.paymentReference}
+                      </span>
+                    )}
+                  </>
+                )}
                 <div className="flex items-center gap-1 ml-2">
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPrintingOrder(o)} title="Imprimir">
                         <Printer size={15} />

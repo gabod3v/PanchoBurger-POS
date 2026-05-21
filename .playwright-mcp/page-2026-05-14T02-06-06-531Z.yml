@@ -1,0 +1,175 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - heading "Nuevo Pedido" [level=1] [ref=e15]
+          - generic [ref=e16]:
+            - generic [ref=e17]: "Tasa BCV/Día:"
+            - generic [ref=e18]: 50.0000 Bs
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - textbox "Nombre del cliente" [ref=e21]
+            - generic [ref=e22]:
+              - img [ref=e23]
+              - textbox "Buscar productos..." [ref=e26]
+            - button "El cliente paga ahora" [ref=e28] [cursor=pointer]:
+              - img [ref=e29]
+              - generic [ref=e32]: El cliente paga ahora
+            - generic [ref=e33]:
+              - generic [ref=e34]: Método de Pago
+              - generic [ref=e35]:
+                - button "Pagomóvil" [ref=e36] [cursor=pointer]:
+                  - img [ref=e37]
+                  - generic [ref=e39]: Pagomóvil
+                - button "Efectivo Bs" [ref=e40] [cursor=pointer]:
+                  - img [ref=e41]
+                  - generic [ref=e46]: Efectivo Bs
+                - button "Efectivo $" [ref=e47] [cursor=pointer]:
+                  - img [ref=e48]
+                  - generic [ref=e51]: Efectivo $
+                - button "Punto" [ref=e52] [cursor=pointer]:
+                  - img [ref=e53]
+                  - generic [ref=e55]: Punto
+            - generic [ref=e59]:
+              - button "Todas" [ref=e60] [cursor=pointer]
+              - button "Hamburguesas" [ref=e61] [cursor=pointer]
+              - button "Bebidas" [ref=e62] [cursor=pointer]
+              - button "Acompañantes" [ref=e63] [cursor=pointer]
+              - button "Otros" [ref=e64] [cursor=pointer]
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e68] [cursor=pointer]:
+                  - paragraph [ref=e69]: Hamburguesa Clásica
+                  - generic [ref=e70]:
+                    - paragraph [ref=e71]: 200.00 Bs
+                    - paragraph [ref=e72]: ≈ $4.00 USD
+                - generic [ref=e73]:
+                  - generic [ref=e74]: Hamburguesas
+                  - generic [ref=e75]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e76]: "0"
+                    - button [ref=e77] [cursor=pointer]:
+                      - img
+              - generic [ref=e78]:
+                - generic [ref=e80] [cursor=pointer]:
+                  - paragraph [ref=e81]: Hamburguesa BBQ
+                  - generic [ref=e82]:
+                    - paragraph [ref=e83]: 250.00 Bs
+                    - paragraph [ref=e84]: ≈ $5.00 USD
+                - generic [ref=e85]:
+                  - generic [ref=e86]: Hamburguesas
+                  - generic [ref=e87]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e88]: "0"
+                    - button [ref=e89] [cursor=pointer]:
+                      - img
+              - generic [ref=e90]:
+                - generic [ref=e92] [cursor=pointer]:
+                  - paragraph [ref=e93]: Perro Caliente
+                  - generic [ref=e94]:
+                    - paragraph [ref=e95]: 120.00 Bs
+                    - paragraph [ref=e96]: ≈ $2.40 USD
+                - generic [ref=e97]:
+                  - generic [ref=e98]: Hamburguesas
+                  - generic [ref=e99]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e100]: "0"
+                    - button [ref=e101] [cursor=pointer]:
+                      - img
+              - generic [ref=e102]:
+                - generic [ref=e104] [cursor=pointer]:
+                  - paragraph [ref=e105]: Papas Fritas
+                  - generic [ref=e106]:
+                    - paragraph [ref=e107]: 70.00 Bs
+                    - paragraph [ref=e108]: ≈ $1.40 USD
+                - generic [ref=e109]:
+                  - generic [ref=e110]: Acompañantes
+                  - generic [ref=e111]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e112]: "0"
+                    - button [ref=e113] [cursor=pointer]:
+                      - img
+              - generic [ref=e114]:
+                - generic [ref=e116] [cursor=pointer]:
+                  - paragraph [ref=e117]: Aros de Cebolla
+                  - generic [ref=e118]:
+                    - paragraph [ref=e119]: 90.00 Bs
+                    - paragraph [ref=e120]: ≈ $1.80 USD
+                - generic [ref=e121]:
+                  - generic [ref=e122]: Acompañantes
+                  - generic [ref=e123]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e124]: "0"
+                    - button [ref=e125] [cursor=pointer]:
+                      - img
+              - generic [ref=e126]:
+                - generic [ref=e128] [cursor=pointer]:
+                  - paragraph [ref=e129]: Pepsi Cola 500ml
+                  - paragraph [ref=e130]: $1.50 USD
+                - generic [ref=e131]:
+                  - generic [ref=e132]: Bebidas
+                  - generic [ref=e133]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e134]: "0"
+                    - button [ref=e135] [cursor=pointer]:
+                      - img
+              - generic [ref=e136]:
+                - generic [ref=e138] [cursor=pointer]:
+                  - paragraph [ref=e139]: Malta Regional
+                  - paragraph [ref=e140]: $1.50 USD
+                - generic [ref=e141]:
+                  - generic [ref=e142]: Bebidas
+                  - generic [ref=e143]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e144]: "0"
+                    - button [ref=e145] [cursor=pointer]:
+                      - img
+              - generic [ref=e146]:
+                - generic [ref=e148] [cursor=pointer]:
+                  - paragraph [ref=e149]: Agua Mineral
+                  - paragraph [ref=e150]: $1.00 USD
+                - generic [ref=e151]:
+                  - generic [ref=e152]: Bebidas
+                  - generic [ref=e153]:
+                    - button [disabled]:
+                      - img
+                    - generic [ref=e154]: "0"
+                    - button [ref=e155] [cursor=pointer]:
+                      - img
+          - generic [ref=e156]:
+            - 'heading "Resumen Ticket #2" [level=3] [ref=e158]':
+              - img [ref=e159]
+              - text: "Resumen Ticket #2"
+            - generic [ref=e161]:
+              - img [ref=e162]
+              - paragraph [ref=e165]: No hay productos seleccionados
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - generic [ref=e168]: Total Final
+                - generic [ref=e169]:
+                  - generic [ref=e170]: $0.00
+                  - generic [ref=e171]: USD (Dólares)
+              - generic [ref=e172]:
+                - generic [ref=e173]: Pago en Bs
+                - generic [ref=e174]:
+                  - generic [ref=e175]: "0.00"
+                  - generic [ref=e176]: Bs
+            - button "Confirmar Pedido" [disabled]

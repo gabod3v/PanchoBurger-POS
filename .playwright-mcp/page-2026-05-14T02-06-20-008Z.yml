@@ -1,0 +1,105 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img
+        - generic [ref=e8]:
+          - img "Logo" [ref=e9]
+          - generic [ref=e10]: Pancho Burger
+    - main [ref=e11]:
+      - generic [ref=e13]:
+        - heading "Pedidos" [level=1] [ref=e15]
+        - heading "Completados (2)" [level=2] [ref=e16]
+        - generic [ref=e17]:
+          - generic [ref=e19]:
+            - generic [ref=e20]:
+              - generic [ref=e21]:
+                - generic [ref=e22]: "#1"
+                - generic [ref=e23]:
+                  - heading "Cliente Demo" [level=3] [ref=e24]
+                  - paragraph [ref=e25]: 10:05 p. m.
+              - generic [ref=e26]:
+                - generic [ref=e27]: Completado
+                - generic [ref=e28]:
+                  - img [ref=e29]
+                  - text: Efectivo Bs
+                - generic [ref=e34]:
+                  - button "Imprimir" [ref=e35] [cursor=pointer]:
+                    - img
+                  - button "Editar" [ref=e36] [cursor=pointer]:
+                    - img
+                  - button "Eliminar" [ref=e37] [cursor=pointer]:
+                    - img
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Detalle del Pedido
+              - generic [ref=e40]:
+                - generic [ref=e41]:
+                  - generic [ref=e42]: "1"
+                  - generic [ref=e43]:
+                    - generic [ref=e44]: Hamburguesa Clásica
+                    - generic [ref=e45]: $4.00 c/u
+                - generic [ref=e46]: $4.00
+              - generic [ref=e47]:
+                - generic [ref=e48]:
+                  - generic [ref=e49]: "1"
+                  - generic [ref=e50]:
+                    - generic [ref=e51]: Papas Fritas
+                    - generic [ref=e52]: $1.40 c/u
+                - generic [ref=e53]: $1.40
+              - generic [ref=e54]:
+                - generic [ref=e55]:
+                  - generic [ref=e56]: "1"
+                  - generic [ref=e57]:
+                    - generic [ref=e58]: Pepsi Cola 500ml
+                    - generic [ref=e59]: $1.50 c/u
+                - generic [ref=e60]: $1.50
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e63]: Total a Cobrar
+                - generic [ref=e64]:
+                  - generic [ref=e65]: $6.90
+                  - generic [ref=e66]: USD
+              - generic [ref=e67]:
+                - generic [ref=e68]: Equivalente en Bs
+                - generic [ref=e69]: 345.00 Bs
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74]: "#2"
+                - generic [ref=e75]:
+                  - heading "Juan Pérez (debe)" [level=3] [ref=e76]
+                  - paragraph [ref=e77]: 10:06 p. m.
+              - generic [ref=e78]:
+                - generic [ref=e79]: Completado
+                - generic [ref=e80]:
+                  - img [ref=e81]
+                  - text: Sin pagar
+                - generic [ref=e83]:
+                  - button "Imprimir" [ref=e84] [cursor=pointer]:
+                    - img
+                  - button "Editar" [ref=e85] [cursor=pointer]:
+                    - img
+                  - button "Eliminar" [ref=e86] [cursor=pointer]:
+                    - img
+            - generic [ref=e87]:
+              - paragraph [ref=e88]: Detalle del Pedido
+              - generic [ref=e89]:
+                - generic [ref=e90]:
+                  - generic [ref=e91]: "1"
+                  - generic [ref=e92]:
+                    - generic [ref=e93]: Hamburguesa BBQ
+                    - generic [ref=e94]: $5.00 c/u
+                - generic [ref=e95]: $5.00
+            - generic [ref=e96]:
+              - generic [ref=e97]:
+                - generic [ref=e98]: Total a Cobrar
+                - generic [ref=e99]:
+                  - generic [ref=e100]: $5.00
+                  - generic [ref=e101]: USD
+              - generic [ref=e102]:
+                - generic [ref=e103]: Equivalente en Bs
+                - generic [ref=e104]: 250.00 Bs

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package } from 'lucide-react';
-import { DaySession, Order, OrderItem } from '@/types';
+import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package, Banknote, CreditCard, Smartphone, Coins, AlertCircle } from 'lucide-react';
+import { DaySession, Order, OrderItem, PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -78,8 +78,28 @@ export default function DaySummary() {
   };
 
   const completed = sessionOrders.filter(o => o.status === 'completed' || o.status === 'ready' || o.status === 'pending');
+  const paidOrders = completed.filter(o => o.paymentStatus === 'paid');
+  const pendingOrders = completed.filter(o => o.paymentStatus === 'pending');
   const totalUSD = completed.reduce((s, o) => s + parseFloat(o.totalUSD.toString()), 0);
   const totalLocal = completed.reduce((s, o) => s + parseFloat(o.totalLocal.toString()), 0);
+
+  // Desglose por método de pago
+  const paymentMethodLabels: Record<PaymentMethod, { label: string; icon: React.ReactNode; color: string }> = {
+    pagomovil: { label: 'Pagomóvil', icon: <Smartphone size={18} />, color: 'text-blue-500' },
+    efectivo_bs: { label: 'Efectivo Bs', icon: <Coins size={18} />, color: 'text-success' },
+    efectivo_usd: { label: 'Efectivo $', icon: <Banknote size={18} />, color: 'text-primary' },
+    punto: { label: 'Punto', icon: <CreditCard size={18} />, color: 'text-purple-500' },
+  };
+
+  const paymentsByMethod = paidOrders.reduce((acc, o) => {
+    if (o.paymentMethod) {
+      acc[o.paymentMethod] = (acc[o.paymentMethod] || 0) + o.totalUSD;
+    }
+    return acc;
+  }, {} as Record<PaymentMethod, number>);
+
+  const totalPaidUSD = paidOrders.reduce((s, o) => s + o.totalUSD, 0);
+  const totalPendingUSD = pendingOrders.reduce((s, o) => s + o.totalUSD, 0);
 
   if (loading) {
     return (
@@ -201,6 +221,69 @@ export default function DaySummary() {
         </div>
       </div>
 
+      {/* Desglose por método de pago */}
+      <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <div className="pos-card p-6">
+          <h3 className="font-bold text-lg font-display mb-4 flex items-center gap-2">
+            <Banknote className="text-success" size={20} />
+            Ingresos por Método (USD)
+          </h3>
+          {paidOrders.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No hay pedidos pagados</p>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(paymentMethodLabels).map(([method, { label, icon, color }]) => {
+                const amount = paymentsByMethod[method as PaymentMethod] || 0;
+                if (amount === 0) return null;
+                return (
+                  <div key={method} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className={color}>{icon}</span>
+                      <span className="font-medium">{label}</span>
+                    </div>
+                    <span className="font-bold text-success">${amount.toFixed(2)}</span>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <span className="font-bold">Total Pagado</span>
+                <span className="font-bold text-success text-lg">${totalPaidUSD.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="pos-card p-6">
+          <h3 className="font-bold text-lg font-display mb-4 flex items-center gap-2">
+            <AlertCircle className="text-destructive" size={20} />
+            Pendientes por Cobrar
+          </h3>
+          {pendingOrders.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No hay pedidos pendientes</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <span className="font-medium">Pedidos Pendientes</span>
+                <span className="font-bold text-destructive">{pendingOrders.length}</span>
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <span className="font-bold">Total Pendiente</span>
+                <span className="font-bold text-destructive text-lg">${totalPendingUSD.toFixed(2)}</span>
+              </div>
+              {pendingOrders.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-2"
+                  onClick={() => navigate('/pendientes')}
+                >
+                  Ver Pedidos Pendientes
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {completed.length > 0 && (
         <div className="pos-card mb-8 p-6">
           <h2 className="font-bold text-lg font-display mb-4 flex items-center gap-2">
@@ -223,7 +306,17 @@ export default function DaySummary() {
                 {completed.map(o => (
                   <tr key={o.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
                     <td className="py-3 pr-4 font-bold text-primary">{o.ticketNumber}</td>
-                    <td className="py-3 pr-4 font-medium">{o.customerName}</td>
+                    <td className="py-3 pr-4 font-medium">
+                      {o.customerName}
+                      {o.paymentMethod && (
+                        <span className="ml-2 text-[10px] font-bold text-muted-foreground">
+                          • {paymentMethodLabels[o.paymentMethod]?.label}
+                          {o.paymentMethod === 'pagomovil' && o.paymentReference && (
+                            <span className="ml-1 font-mono">(Ref: {o.paymentReference})</span>
+                          )}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground italic text-xs">
                       {o.items.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}
                     </td>

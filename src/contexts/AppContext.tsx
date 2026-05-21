@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Product, Order, DaySession, AppState, OrderItem, OrderStatus, SyncStatus, PendingAction } from '@/types';
+import { Product, Order, DaySession, AppState, OrderItem, OrderStatus, SyncStatus, PendingAction, PaymentMethod, PaymentStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
 
 const STORAGE_KEY = 'pancho_burger_state';
@@ -37,6 +37,7 @@ type Action =
   | { type: 'CLOSE_DAY' }
   | { type: 'ADD_ORDER'; payload: Order }
   | { type: 'UPDATE_ORDER_STATUS'; payload: { id: string; status: OrderStatus } }
+  | { type: 'REGISTER_PAYMENT'; payload: { id: string; paymentMethod: PaymentMethod; paymentReference?: string; totalLocal: number; paidAt: string } }
   | { type: 'RESET_DAY' }
   | { type: 'ADD_CATEGORY'; payload: { id: string; name: string } }
   | { type: 'UPDATE_CATEGORY'; payload: { id: string; name: string } }
@@ -67,6 +68,22 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, orders: [...state.orders, action.payload], nextTicket: state.nextTicket + 1 };
     case 'UPDATE_ORDER_STATUS':
       return { ...state, orders: state.orders.map(o => o.id === action.payload.id ? { ...o, status: action.payload.status } : o) };
+    case 'REGISTER_PAYMENT':
+      return {
+        ...state,
+        orders: state.orders.map(o =>
+          o.id === action.payload.id
+            ? {
+                ...o,
+                paymentStatus: 'paid' as PaymentStatus,
+                paymentMethod: action.payload.paymentMethod,
+                paymentReference: action.payload.paymentReference,
+                totalLocal: action.payload.totalLocal,
+                paidAt: action.payload.paidAt
+              }
+            : o
+        )
+      };
     case 'RESET_DAY':
       return { ...state, currentDay: null, orders: [], nextTicket: 1 };
     case 'ADD_CATEGORY':
@@ -100,9 +117,10 @@ interface AppContextType {
   deleteCategory: (id: string) => void;
   openDay: (exchangeRate: number, customBsPrices?: Record<string, number>) => void;
   closeDay: () => void;
-  addOrder: (customerName: string, items: OrderItem[], sessionId?: string, ticketNumber?: number) => void;
+  addOrder: (customerName: string, items: OrderItem[], sessionId?: string, ticketNumber?: number, paymentStatus?: PaymentStatus, paymentMethod?: PaymentMethod, paymentReference?: string) => void;
   deleteOrder: (id: string, sessionId?: string) => void;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
+  registerPayment: (orderId: string, paymentMethod: PaymentMethod, paymentReference?: string) => void;
   resetDay: () => void;
   fetchOrdersBySession: (sessionId: string) => Promise<Order[]>;
 }
@@ -167,15 +185,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { data: products } = await supabase.from('products').select('*');
-        const { data: categories } = await supabase.from('categories').select('*');
-        const { data: sessions = [] } = await supabase.from('day_sessions').select('*').order('opened_at', { ascending: false });
+        const { data: products } = await supabase.from('productos').select('*');
+        const { data: categories } = await supabase.from('categorias').select('*');
+        const { data: sessions = [] } = await supabase.from('sesiones_dia').select('*').order('opened_at', { ascending: false });
         
         const openSession = sessions?.find(s => s.is_open) || null;
 
         let orders: Order[] = [];
         if (openSession) {
-          const { data: ordersData } = await supabase.from('orders').select(`
+          const { data: ordersData } = await supabase.from('pedidos').select(`
             *,
             items:order_items(quantity, product:products(*))
           `).eq('day_session_id', openSession.id);
@@ -188,6 +206,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
               totalUSD: o.total_usd,
               totalLocal: o.total_local,
               status: o.status,
+              paymentStatus: o.payment_status || 'pending',
+              paymentMethod: o.payment_method,
+              paymentReference: o.payment_reference,
+              paidAt: o.paid_at,
               createdAt: o.created_at,
               items: o.items.map((i: any) => ({
                 quantity: i.quantity,
@@ -274,7 +296,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addProduct = async (name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false) => {
     const newProduct: Product = { id: crypto.randomUUID(), name, price, category, image_url, price_bs, is_price_in_bs };
     dispatch({ type: 'ADD_PRODUCT', payload: newProduct });
-    await performMutation('INSERT', 'products', {
+    await performMutation('INSERT', 'productos', {
       id: newProduct.id,
       name,
       price,
@@ -288,7 +310,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateProduct = async (id: string, name: string, price: number, category: string, image_url?: string, price_bs: number = 0, is_price_in_bs: boolean = false) => {
     const updated: Product = { id, name, price, category, image_url, price_bs, is_price_in_bs };
     dispatch({ type: 'UPDATE_PRODUCT', payload: updated });
-    await performMutation('UPDATE', 'products', {
+    await performMutation('UPDATE', 'productos', {
       id,
       name,
       price,
@@ -301,23 +323,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteProduct = async (id: string) => {
     dispatch({ type: 'DELETE_PRODUCT', payload: id });
-    await performMutation('DELETE', 'products', { id });
+    await performMutation('DELETE', 'productos', { id });
   };
 
   const addCategory = async (name: string) => {
     const newCategory = { id: crypto.randomUUID(), name };
     dispatch({ type: 'ADD_CATEGORY', payload: newCategory });
-    await performMutation('INSERT', 'categories', newCategory);
+    await performMutation('INSERT', 'categorias', newCategory);
   };
 
   const updateCategory = async (id: string, name: string) => {
     dispatch({ type: 'UPDATE_CATEGORY', payload: { id, name } });
-    await performMutation('UPDATE', 'categories', { id, name });
+    await performMutation('UPDATE', 'categorias', { id, name });
   };
 
   const deleteCategory = async (id: string) => {
     dispatch({ type: 'DELETE_CATEGORY', payload: id });
-    await performMutation('DELETE', 'categories', { id });
+    await performMutation('DELETE', 'categorias', { id });
   };
 
   const openDay = async (exchangeRate: number, customBsPrices?: Record<string, number>) => {
@@ -340,7 +362,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     dispatch({ type: 'OPEN_DAY', payload: newDay });
-    await performMutation('INSERT', 'day_sessions', {
+    await performMutation('INSERT', 'sesiones_dia', {
       id: newDay.id,
       date: newDay.date,
       exchange_rate: newDay.exchangeRate,
@@ -354,10 +376,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const closedAt = new Date().toISOString();
     const sessionId = state.currentDay.id;
     dispatch({ type: 'CLOSE_DAY' });
-    await performMutation('UPDATE', 'day_sessions', { id: sessionId, is_open: false, closed_at: closedAt });
+    await performMutation('UPDATE', 'sesiones_dia', { id: sessionId, is_open: false, closed_at: closedAt });
     
     // Refresh sessions list after closing
-    const { data: sessions } = await supabase.from('day_sessions').select('*').order('opened_at', { ascending: false });
+    const { data: sessions } = await supabase.from('sesiones_dia').select('*').order('opened_at', { ascending: false });
     if (sessions) {
       dispatch({ type: 'LOAD_SESSIONS', payload: sessions.map(s => ({
         id: s.id,
@@ -370,21 +392,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addOrder = async (customerName: string, items: OrderItem[], sessionId?: string, ticketNumber?: number) => {
+  const addOrder = async (customerName: string, items: OrderItem[], sessionId?: string, ticketNumber?: number, paymentStatus: PaymentStatus = 'pending', paymentMethod?: PaymentMethod, paymentReference?: string) => {
     const targetSessionId = sessionId || state.currentDay?.id;
     const session = state.sessions.find(s => s.id === targetSessionId) || state.currentDay;
     if (!targetSessionId || !session) return;
 
     const totalUSD = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
     const totalLocal = totalUSD * session.exchangeRate;
+    const isPaid = paymentStatus === 'paid';
     const newOrder = {
       id: crypto.randomUUID(),
-      ticketNumber: ticketNumber || (state.currentDay?.id === targetSessionId ? state.nextTicket : 999), // Simplified for history
+      ticketNumber: ticketNumber || (state.currentDay?.id === targetSessionId ? state.nextTicket : 999),
       customerName,
       items,
       totalUSD,
       totalLocal,
-      status: 'completed' as OrderStatus, // Historical additions are usually completed
+      status: 'completed' as OrderStatus,
+      paymentStatus,
+      paymentMethod: isPaid ? paymentMethod : undefined,
+      paymentReference: isPaid && paymentMethod === 'pagomovil' ? paymentReference : undefined,
+      paidAt: isPaid ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
     };
     
@@ -393,7 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     // 1. Queue Order
-    await performMutation('INSERT', 'orders', {
+    await performMutation('INSERT', 'pedidos', {
       id: newOrder.id,
       day_session_id: targetSessionId,
       ticket_number: newOrder.ticketNumber,
@@ -401,6 +428,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       total_usd: newOrder.totalUSD,
       total_local: newOrder.totalLocal,
       status: newOrder.status,
+      payment_status: newOrder.paymentStatus,
+      payment_method: newOrder.paymentMethod,
+      payment_reference: newOrder.paymentReference,
+      paid_at: newOrder.paidAt,
       created_at: newOrder.createdAt
     });
 
@@ -421,18 +452,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     // First delete items, then order (to handle constraints manually in queue if needed)
     await performMutation('DELETE', 'order_items', { order_id: id }, 'order_id', id);
-    await performMutation('DELETE', 'orders', { id });
+    await performMutation('DELETE', 'pedidos', { id });
   };
 
   const updateOrderStatus = async (id: string, status: OrderStatus) => {
     dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id, status } });
-    await performMutation('UPDATE', 'orders', { id, status });
+    await performMutation('UPDATE', 'pedidos', { id, status });
+  };
+
+  const registerPayment = async (orderId: string, paymentMethod: PaymentMethod, paymentReference?: string) => {
+    const currentDay = state.currentDay;
+    const order = state.orders.find(o => o.id === orderId);
+    if (!order || !currentDay) return;
+
+    // Recalcular totalLocal con la tasa del día actual
+    const newTotalLocal = order.totalUSD * currentDay.exchangeRate;
+    const paidAt = new Date().toISOString();
+
+    // Actualizar estado local
+    dispatch({
+      type: 'REGISTER_PAYMENT',
+      payload: {
+        id: orderId,
+        paymentMethod,
+        paymentReference: paymentMethod === 'pagomovil' ? paymentReference : undefined,
+        totalLocal: newTotalLocal,
+        paidAt
+      }
+    });
+    
+    // Actualizar en Supabase
+    await performMutation('UPDATE', 'pedidos', {
+      id: orderId,
+      payment_status: 'paid',
+      payment_method: paymentMethod,
+      payment_reference: paymentMethod === 'pagomovil' ? paymentReference : null,
+      total_local: newTotalLocal,
+      paid_at: paidAt
+    });
   };
 
   const resetDay = () => dispatch({ type: 'RESET_DAY' });
 
   const fetchOrdersBySession = async (sessionId: string): Promise<Order[]> => {
-    const { data: ordersData } = await supabase.from('orders').select(`
+    if (!supabase) return [];
+
+    const { data: ordersData } = await supabase.from('pedidos').select(`
       *,
       items:order_items(quantity, product:products(*))
     `).eq('day_session_id', sessionId);
@@ -446,6 +511,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       totalUSD: parseFloat(o.total_usd),
       totalLocal: parseFloat(o.total_local),
       status: o.status,
+      paymentStatus: o.payment_status || 'pending',
+      paymentMethod: o.payment_method,
+      paymentReference: o.payment_reference,
+      paidAt: o.paid_at,
       createdAt: o.created_at,
       items: o.items.map((i: any) => ({
         quantity: i.quantity,
@@ -474,6 +543,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addOrder,
       deleteOrder,
       updateOrderStatus,
+      registerPayment,
       resetDay,
       fetchOrdersBySession
     }}>

@@ -14,6 +14,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Order, PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 
@@ -146,7 +153,7 @@ export default function CashRegister() {
                   </button>
                 </div>
               )}
-              <form onSubmit={startOpen} className="flex gap-3">
+              <form onSubmit={startOpen} className="flex gap-3 bg-card border border-border/50 rounded-lg p-3 shadow-sm">
                 <Input
                   type="number"
                   step="0.0001"
@@ -154,7 +161,7 @@ export default function CashRegister() {
                   placeholder={fetchingRate ? 'Consultando...' : 'Ej: 36.5412'}
                   value={rate}
                   onChange={e => setRate(e.target.value)}
-                  className="flex-1 text-lg py-6 text-center font-bold tracking-widest bg-muted/30"
+                  className="flex-1 text-lg py-6 text-center font-bold tracking-widest bg-background border-border/30 focus-visible:ring-1 focus-visible:ring-primary/50"
                 />
                 <Button 
                   type="submit" 
@@ -171,49 +178,49 @@ export default function CashRegister() {
               </form>
 
               {/* Modal de pendientes de días anteriores */}
-              {showPendingModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                  <div className="pos-card max-w-lg w-full p-6 max-h-[80vh] overflow-y-auto">
-                    <div className="flex items-center gap-3 mb-4">
+              <Dialog open={showPendingModal} onOpenChange={setShowPendingModal}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3">
                       <Clock className="text-warning" size={24} />
-                      <h2 className="text-xl font-bold font-display">Pedidos Pendientes</h2>
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      Tienes {pendingFromPreviousDays.length} pedido{pendingFromPreviousDays.length !== 1 ? 's' : ''} pendiente{pendingFromPreviousDays.length !== 1 ? 's' : ''} de días anteriores.
-                    </p>
-                    
-                    <div className="space-y-2 mb-6 max-h-[300px] overflow-y-auto">
-                      {pendingFromPreviousDays.map(order => (
-                        <div key={order.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border/50">
-                          <div>
-                            <p className="font-semibold">Ticket #{order.ticketNumber}</p>
-                            <p className="text-sm text-muted-foreground">{order.customerName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString('es-VE')}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-warning">${order.totalUSD.toFixed(2)}</p>
-                            <p className="text-sm text-muted-foreground">{order.totalLocal.toFixed(2)} Bs</p>
-                          </div>
+                      Pedidos Pendientes
+                    </DialogTitle>
+                  </DialogHeader>
+                  <p className="text-muted-foreground mb-4">
+                    Tienes {pendingFromPreviousDays.length} pedido{pendingFromPreviousDays.length !== 1 ? 's' : ''} pendiente{pendingFromPreviousDays.length !== 1 ? 's' : ''} de días anteriores.
+                  </p>
+                  
+                  <div className="space-y-2 mb-6 max-h-[300px] overflow-y-auto">
+                    {pendingFromPreviousDays.map(order => (
+                      <div key={order.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border/50">
+                        <div>
+                          <p className="font-semibold">Ticket #{order.ticketNumber}</p>
+                          <p className="text-sm text-muted-foreground">{order.customerName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleDateString('es-VE')}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button variant="outline" onClick={() => setShowPendingModal(false)} className="flex-1">
-                        Después
-                      </Button>
-                      <Button onClick={() => {
-                        setShowPendingModal(false);
-                        window.location.href = '/pendientes';
-                      }} className="flex-1">
-                        Registrar Pagos
-                      </Button>
-                    </div>
+                        <div className="text-right">
+                          <p className="font-bold text-warning">${order.totalUSD.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">{order.totalLocal.toFixed(2)} Bs</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
+
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowPendingModal(false)} className="flex-1">
+                      Después
+                    </Button>
+                    <Button onClick={() => {
+                      setShowPendingModal(false);
+                      window.location.href = '/pendientes';
+                    }} className="flex-1">
+                      Registrar Pagos
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <div className="space-y-6">
@@ -223,7 +230,7 @@ export default function CashRegister() {
               </div>
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                 {bsProducts.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border border-border/50">
+                  <div key={p.id} className="flex items-center justify-between p-4 bg-card rounded-lg border border-border/50 shadow-sm">
                     <span className="font-semibold text-left">{p.name}</span>
                     <div className="flex items-center gap-2">
                       <Input
@@ -250,18 +257,18 @@ export default function CashRegister() {
           <h2 className="text-2xl font-bold font-display mb-1 tracking-tight text-success">Caja Activa</h2>
           <p className="text-muted-foreground font-medium mb-8">La caja está recibiendo transacciones.</p>
           <div className="grid grid-cols-2 gap-4 my-6">
-            <div className="pos-stat items-center">
-              <span className="text-xs text-muted-foreground">Fecha</span>
-              <span className="font-bold">{currentDay.date}</span>
+            <div className="bg-card rounded-lg border border-border/50 p-4 flex flex-col items-center gap-1 shadow-sm">
+              <span className="text-xs text-muted-foreground font-medium">Fecha</span>
+              <span className="font-bold text-lg">{currentDay.date}</span>
             </div>
-            <div className="pos-stat items-center">
-              <span className="text-xs text-muted-foreground">Tasa</span>
-              <span className="font-bold">{currentDay.exchangeRate} Bs/$</span>
+            <div className="bg-card rounded-lg border border-border/50 p-4 flex flex-col items-center gap-1 shadow-sm">
+              <span className="text-xs text-muted-foreground font-medium">Tasa</span>
+              <span className="font-bold text-lg">{currentDay.exchangeRate} Bs/$</span>
             </div>
           </div>
-          <div className="pos-stat items-center mb-6">
-            <span className="text-xs text-muted-foreground">Pedidos del día</span>
-            <span className="text-2xl font-bold font-display">{state.orders.length}</span>
+          <div className="bg-card rounded-lg border border-border/50 p-6 flex flex-col items-center gap-1 mb-6 shadow-sm">
+            <span className="text-xs text-muted-foreground font-medium">Pedidos del día</span>
+            <span className="text-3xl font-bold font-display">{state.orders.length}</span>
           </div>
 
           <AlertDialog>

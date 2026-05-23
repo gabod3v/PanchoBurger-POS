@@ -109,7 +109,7 @@
 
 @layer components {
   .pos-card {
-    @apply bg-card rounded-xl border border-border shadow-sm p-5 transition-all duration-500 hover:shadow-md;
+    @apply bg-card text-card-foreground rounded-lg border border-border/50 shadow-sm p-6 transition-all duration-500 hover:shadow-md;
   }
 
   .pos-card-hover:hover {
@@ -117,23 +117,7 @@
   }
 
   .pos-stat {
-    @apply bg-card rounded-xl border border-border shadow-sm p-4 flex flex-col gap-1 transition-all hover:bg-muted/10;
-  }
-
-  .pos-badge {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
-  }
-
-  .pos-badge-pending {
-    @apply pos-badge bg-warning/15 text-warning;
-  }
-
-  .pos-badge-ready {
-    @apply pos-badge bg-info/15 text-info;
-  }
-
-  .pos-badge-completed {
-    @apply pos-badge bg-success/15 text-success;
+    @apply bg-card text-card-foreground rounded-lg border border-border/50 shadow-sm p-4 flex flex-col gap-1;
   }
 }
 

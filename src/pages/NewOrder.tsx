@@ -4,18 +4,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft, Banknote, CreditCard, Smartphone, Coins, Clock } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft, Banknote, Clock } from 'lucide-react';
 import WeightStepper from '@/components/WeightStepper';
+import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
 import { OrderItem, PaymentMethod, PaymentStatus } from '@/types';
 import { formatQty, formatUnitPrice } from '@/lib/format';
 import { toast } from 'sonner';
-
-const paymentMethods: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-  { value: 'pagomovil', label: 'Pagomóvil', icon: <Smartphone size={18} /> },
-  { value: 'efectivo_bs', label: 'Efectivo Bs', icon: <Coins size={18} /> },
-  { value: 'efectivo_usd', label: 'Efectivo $', icon: <Banknote size={18} /> },
-  { value: 'punto', label: 'Punto', icon: <CreditCard size={18} /> },
-];
 
 export default function NewOrder() {
   const { state, addOrder, deleteOrder } = useApp();
@@ -181,12 +175,12 @@ export default function NewOrder() {
           />
 
           <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors focus-within:text-foreground" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors" size={18} />
             <Input
               placeholder="Buscar productos..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-12 py-6 text-lg bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary shadow-inner-sm rounded-xl transition-all"
+              className="pl-12 py-6 text-lg bg-card border-border/30 focus-visible:ring-1 focus-visible:ring-primary/50 shadow-sm rounded-lg transition-all"
             />
           </div>
 
@@ -209,23 +203,7 @@ export default function NewOrder() {
             <>
               <div className="mb-6">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Método de Pago</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {paymentMethods.map(pm => (
-                    <button
-                      key={pm.value}
-                      type="button"
-                      onClick={() => setPaymentMethod(pm.value)}
-                      className={`flex items-center justify-center gap-2 py-3 px-2 rounded-lg border transition-all font-medium text-sm ${
-                        paymentMethod === pm.value
-                          ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                          : 'bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                      }`}
-                    >
-                      {pm.icon}
-                      <span>{pm.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
               </div>
 
               {paymentMethod === 'pagomovil' && (
@@ -282,7 +260,7 @@ export default function NewOrder() {
                         )}
                       </div>
                       {p.image_url && (
-                        <img src={p.image_url} alt={p.name} className="w-16 h-16 rounded-xl object-cover shadow-sm shrink-0 border border-border/40" />
+                        <img src={p.image_url} alt={p.name} className="w-16 h-16 rounded-lg object-cover shadow-sm shrink-0 border border-border/40" />
                       )}
                     </div>
 
@@ -357,7 +335,7 @@ export default function NewOrder() {
               </div>
             </div>
             
-            <div className="flex justify-between items-center py-3 px-4 bg-muted/40 rounded-xl border border-border/10">
+            <div className="flex justify-between items-center py-3 px-4 bg-muted/40 rounded-lg border border-border/10">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Pago en Bs</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold font-display text-primary">{totalLocal.toFixed(2)}</span>

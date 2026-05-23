@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package, Banknote, CreditCard, Smartphone, Coins, AlertCircle } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package, Banknote, CreditCard, Smartphone, Coins, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { StatCard } from '@/components/StatCard';
 import { DaySession, Order, OrderItem, PaymentMethod } from '@/types';
 import { formatQty, formatItemSummary } from '@/lib/format';
 import { toast } from 'sonner';
@@ -86,10 +87,10 @@ export default function DaySummary() {
 
   // Desglose por método de pago
   const paymentMethodLabels: Record<PaymentMethod, { label: string; icon: React.ReactNode; color: string }> = {
-    pagomovil: { label: 'Pagomóvil', icon: <Smartphone size={18} />, color: 'text-blue-500' },
+    pagomovil: { label: 'Pagomóvil', icon: <Smartphone size={18} />, color: 'text-accent' },
     efectivo_bs: { label: 'Efectivo Bs', icon: <Coins size={18} />, color: 'text-success' },
     efectivo_usd: { label: 'Efectivo $', icon: <Banknote size={18} />, color: 'text-primary' },
-    punto: { label: 'Punto', icon: <CreditCard size={18} />, color: 'text-purple-500' },
+    punto: { label: 'Punto', icon: <CreditCard size={18} />, color: 'text-secondary' },
   };
 
   const paymentsByMethod = paidOrders.reduce((acc, o) => {
@@ -215,21 +216,9 @@ export default function DaySummary() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <div className="pos-stat items-center border border-border/50">
-          <ShoppingBag size={24} className="text-primary mb-1" />
-          <span className="text-xs text-muted-foreground font-medium">Pedidos completados</span>
-          <span className="text-3xl font-bold font-display">{completed.length}</span>
-        </div>
-        <div className="pos-stat items-center border border-border/50">
-          <DollarSign size={24} className="text-success mb-1" />
-          <span className="text-xs text-muted-foreground font-medium">Total USD</span>
-          <span className="text-3xl font-bold font-display text-success">${totalUSD.toFixed(2)}</span>
-        </div>
-        <div className="pos-stat items-center border border-border/50">
-          <TrendingUp size={24} className="text-warning mb-1" />
-          <span className="text-xs text-muted-foreground font-medium">Total Bs</span>
-          <span className="text-3xl font-bold font-display text-warning">{totalLocal.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
-        </div>
+        <StatCard label="Pedidos completados" value={completed.length} icon={CheckCircle2} />
+        <StatCard label="Total USD" value={`$${totalUSD.toFixed(2)}`} icon={DollarSign} />
+        <StatCard label="Total Bs" value={totalLocal.toLocaleString('es-VE', { minimumFractionDigits: 2 })} icon={TrendingUp} />
       </div>
 
       {/* Desglose por método de pago */}
@@ -256,7 +245,7 @@ export default function DaySummary() {
                   </div>
                 );
               })}
-              <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
                 <span className="font-bold">Total Pagado</span>
                 <span className="font-bold text-success text-lg">${totalPaidUSD.toFixed(2)}</span>
               </div>
@@ -277,7 +266,7 @@ export default function DaySummary() {
                 <span className="font-medium">Pedidos Pendientes</span>
                 <span className="font-bold text-destructive">{pendingOrders.length}</span>
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
                 <span className="font-bold">Total Pendiente</span>
                 <span className="font-bold text-destructive text-lg">${totalPendingUSD.toFixed(2)}</span>
               </div>
@@ -304,7 +293,7 @@ export default function DaySummary() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-muted-foreground font-bold">
+                <tr className="border-b border-border/50 text-left text-muted-foreground font-bold">
                   <th className="pb-3 pr-4">#</th>
                   <th className="pb-3 pr-4">Cliente</th>
                   <th className="pb-3 pr-4">Productos</th>
@@ -314,8 +303,8 @@ export default function DaySummary() {
                 </tr>
               </thead>
               <tbody>
-                {completed.map(o => (
-                  <tr key={o.id} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                {completed.map((o, idx) => (
+                  <tr key={o.id} className={`border-b border-border/30 transition-colors ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/10'} hover:bg-muted/20`}>
                     <td className="py-3 pr-4 font-bold text-primary">{o.ticketNumber}</td>
                     <td className="py-3 pr-4 font-medium">
                       {o.customerName}
@@ -354,7 +343,7 @@ export default function DaySummary() {
       )}
 
       {(!session.isOpen && !id) && (
-        <Button size="lg" className="w-full py-7 text-lg rounded-2xl shadow-lg hover:shadow-xl transition-all" onClick={() => { resetDay(); navigate('/caja'); }}>
+        <Button size="lg" className="w-full py-7 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all" onClick={() => { resetDay(); navigate('/caja'); }}>
           Iniciar Nuevo Día de Ventas
         </Button>
       )}

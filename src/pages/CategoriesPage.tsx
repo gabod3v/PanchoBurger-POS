@@ -58,7 +58,7 @@ export default function CategoriesPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {state.categories.length === 0 ? (
-          <p className="text-muted-foreground col-span-full py-8 text-center bg-muted/20 rounded-xl border border-dashed border-border">
+          <p className="text-muted-foreground col-span-full py-8 text-center bg-muted/20 rounded-lg border border-dashed border-border/50 shadow-sm">
             No hay categorías registradas.
           </p>
         ) : (

@@ -15,7 +15,7 @@ export default function HistoryPage() {
 
       <div className="grid gap-4">
         {state.sessions.length === 0 ? (
-          <div className="text-center py-20 bg-muted/20 rounded-2xl border border-dashed border-border">
+          <div className="text-center py-20 bg-muted/20 rounded-lg border border-dashed border-border/50 shadow-sm">
             <Calendar size={48} className="mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No hay registros</h3>
             <p className="text-muted-foreground">Los días cerrados aparecerán aquí.</p>
@@ -29,7 +29,7 @@ export default function HistoryPage() {
             >
               <CardContent className="p-0">
                 <div className="flex items-center p-4">
-                  <div className={`p-3 rounded-xl mr-4 ${session.isOpen ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+                  <div className={`p-3 rounded-lg mr-4 ${session.isOpen ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                     {session.isOpen ? <CheckCircle2 size={24} /> : <Clock size={24} />}
                   </div>
                   

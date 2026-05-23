@@ -1,6 +1,10 @@
 import { useApp } from '@/contexts/AppContext';
 import { Link } from 'react-router-dom';
-import { UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, TrendingUp, ShoppingBag, DollarSign } from 'lucide-react';
+import {
+  UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3,
+  ShoppingBag, DollarSign, Clock, CheckCircle2, TrendingUp,
+} from 'lucide-react';
+import { StatCard } from '@/components/StatCard';
 
 export default function Dashboard() {
   const { state } = useApp();
@@ -25,22 +29,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="pos-stat">
-          <span className="text-xs text-muted-foreground font-medium">Pendientes</span>
-          <span className="text-2xl font-bold font-display text-warning">{pendingOrders}</span>
-        </div>
-        <div className="pos-stat">
-          <span className="text-xs text-muted-foreground font-medium">Listos</span>
-          <span className="text-2xl font-bold font-display text-info">{readyOrders}</span>
-        </div>
-        <div className="pos-stat">
-          <span className="text-xs text-muted-foreground font-medium">Completados</span>
-          <span className="text-2xl font-bold font-display text-success">{completedOrders}</span>
-        </div>
-        <div className="pos-stat">
-          <span className="text-xs text-muted-foreground font-medium">Vendido (USD)</span>
-          <span className="text-2xl font-bold font-display">${totalUSD.toFixed(2)}</span>
-        </div>
+        <StatCard label="Pendientes" value={pendingOrders} icon={Clock} />
+        <StatCard label="Listos" value={readyOrders} icon={CheckCircle2} />
+        <StatCard label="Completados" value={completedOrders} icon={ShoppingBag} />
+        <StatCard label="Vendido (USD)" value={`$${totalUSD.toFixed(2)}`} icon={TrendingUp} />
       </div>
 
       {currentDay?.isOpen && totalLocal > 0 && (
@@ -57,18 +49,18 @@ export default function Dashboard() {
       <h2 className="text-lg font-semibold font-display mb-4">Acciones rápidas</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { to: '/nuevo-pedido', icon: PlusCircle, label: 'Nuevo Pedido', color: 'bg-primary text-primary-foreground' },
-          { to: '/pedidos', icon: ClipboardList, label: 'Ver Pedidos', color: 'bg-info text-info-foreground' },
-          { to: '/caja', icon: Wallet, label: 'Caja', color: 'bg-warning text-warning-foreground' },
-          { to: '/menu', icon: UtensilsCrossed, label: 'Menú', color: 'bg-accent text-accent-foreground' },
-          { to: '/resumen', icon: BarChart3, label: 'Resumen del Día', color: 'bg-success text-success-foreground' },
-        ].map(({ to, icon: Icon, label, color }) => (
+          { to: '/nuevo-pedido', icon: PlusCircle, label: 'Nuevo Pedido' },
+          { to: '/pedidos', icon: ClipboardList, label: 'Ver Pedidos' },
+          { to: '/caja', icon: Wallet, label: 'Caja' },
+          { to: '/menu', icon: UtensilsCrossed, label: 'Menú' },
+          { to: '/resumen', icon: BarChart3, label: 'Resumen del Día' },
+        ].map(({ to, icon: Icon, label }) => (
           <Link
             key={to}
             to={to}
-            className={`${color} rounded-xl p-5 flex flex-col items-center gap-3 text-center font-medium transition-transform hover:scale-[1.03] active:scale-[0.98]`}
+            className="bg-card border border-border/50 hover:bg-muted rounded-lg p-5 flex flex-col items-center gap-3 text-center font-medium text-foreground transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm"
           >
-            <Icon size={28} />
+            <Icon size={28} className="text-muted-foreground" />
             <span className="text-sm">{label}</span>
           </Link>
         ))}

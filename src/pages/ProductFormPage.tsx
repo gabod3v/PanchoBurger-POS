@@ -182,7 +182,7 @@ export default function ProductFormPage() {
                 <div>
                     <label className="text-sm font-semibold mb-1.5 block">Imagen del Producto</label>
                     {imageUrl ? (
-                        <div className="relative w-full h-48 bg-muted rounded-xl border border-border flex items-center justify-center overflow-hidden group">
+                        <div className="relative w-full h-48 bg-muted rounded-lg border border-border/50 flex items-center justify-center overflow-hidden group">
                             <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <Button type="button" variant="destructive" size="sm" onClick={() => setImageUrl('')} className="gap-2">
@@ -192,14 +192,14 @@ export default function ProductFormPage() {
                         </div>
                     ) : (
                         <div
-                            className={`w-full h-48 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 bg-muted/30'
+                            className={`w-full h-48 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${isDragging ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/50 bg-muted/30'
                                 }`}
                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                             onDragLeave={() => setIsDragging(false)}
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                         >
-                            <div className="p-3 bg-background rounded-full shadow-sm">
+                            <div className="p-3 bg-background rounded-full shadow-sm border border-border/50">
                                 <UploadCloud className="text-muted-foreground" size={24} />
                             </div>
                             <div className="text-center">
@@ -221,7 +221,7 @@ export default function ProductFormPage() {
                     )}
                 </div>
 
-                <div className="pt-4 border-t border-border flex justify-end gap-3">
+                <div className="pt-4 border-t border-border/50 flex justify-end gap-3">
                     <Button type="button" variant="ghost" onClick={() => navigate('/menu')}>
                         Cancelar
                     </Button>

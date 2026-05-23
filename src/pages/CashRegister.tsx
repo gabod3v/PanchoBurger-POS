@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Unlock, AlertTriangle, Clock, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
@@ -21,11 +22,13 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import RateDisplay from '@/components/RateDisplay';
 import { Order, PaymentMethod } from '@/types';
 import { toast } from 'sonner';
 
 export default function CashRegister() {
   const { state, openDay, closeDay, fetchOrdersBySession, registerPayment } = useApp();
+  const navigate = useNavigate();
   const [rate, setRate] = useState('');
   const [step, setStep] = useState(1); // 1: Tasa, 2: Precios en Bs, 3: Pendientes
   const [bsPrices, setBsPrices] = useState<Record<string, number>>({});
@@ -261,9 +264,9 @@ export default function CashRegister() {
               <span className="text-xs text-muted-foreground font-medium">Fecha</span>
               <span className="font-bold text-lg">{currentDay.date}</span>
             </div>
-            <div className="bg-card rounded-lg border border-border/50 p-4 flex flex-col items-center gap-1 shadow-sm">
-              <span className="text-xs text-muted-foreground font-medium">Tasa</span>
-              <span className="font-bold text-lg">{currentDay.exchangeRate} Bs/$</span>
+            <div className="bg-card rounded-lg border border-border/50 p-4 flex flex-col items-center shadow-sm">
+              <span className="text-xs text-muted-foreground font-medium mb-2">Tasa</span>
+              <RateDisplay rate={currentDay.exchangeRate} variant="badge" />
             </div>
           </div>
           <div className="bg-card rounded-lg border border-border/50 p-6 flex flex-col items-center gap-1 mb-6 shadow-sm">
@@ -288,7 +291,11 @@ export default function CashRegister() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={closeDay} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <AlertDialogAction onClick={() => { 
+                  const sessionId = state.currentDay?.id;
+                  closeDay();
+                  if (sessionId) navigate(`/resumen/${sessionId}`);
+                }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                   Sí, Cerrar Caja
                 </AlertDialogAction>
               </AlertDialogFooter>

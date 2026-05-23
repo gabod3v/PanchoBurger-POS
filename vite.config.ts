@@ -16,15 +16,20 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo.png", "robots.txt"],
+      includeAssets: ["logo.png", "logo.svg", "favicon.svg", "robots.txt"],
       manifest: {
-        name: "Pancho Burger POS",
-        short_name: "Pancho POS",
-        description: "Sistema de Punto de Venta para Pancho Burger",
+        name: "PedidoClaro — POS para restaurantes",
+        short_name: "PedidoClaro",
+        description: "Sistema de Punto de Venta para restaurantes. Gestioná pedidos, caja en USD y Bs.",
         theme_color: "#ef4444",
         background_color: "#ffffff",
         display: "standalone",
         icons: [
+          {
+            src: "logo.svg",
+            sizes: "512x512",
+            type: "image/svg+xml",
+          },
           {
             src: "logo.png",
             sizes: "192x192",

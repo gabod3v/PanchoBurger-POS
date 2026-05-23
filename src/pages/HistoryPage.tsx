@@ -2,6 +2,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, ChevronRight, DollarSign, Clock, CheckCircle2, Circle } from 'lucide-react';
+import RateDisplay from '@/components/RateDisplay';
 
 export default function HistoryPage() {
   const { state } = useApp();
@@ -43,7 +44,7 @@ export default function HistoryPage() {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Tasa: {session.exchangeRate} Bs/$ • {new Date(session.openedAt).toLocaleTimeString()}
+                      <RateDisplay rate={session.exchangeRate} variant="badge" /> • {new Date(session.openedAt).toLocaleTimeString()}
                     </p>
                   </div>
 

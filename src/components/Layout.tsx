@@ -1,12 +1,13 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/menu', icon: UtensilsCrossed, label: 'Menú' },
   { to: '/categorias', icon: Tags, label: 'Categorías' },
   { to: '/historial', icon: History, label: 'Historial' },
@@ -20,8 +21,12 @@ const navItems = [
 export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { state } = useApp();
+  const { profile, tenant: userTenant, hasRole, subscription, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const isExpired = subscription?.status === 'expired';
+  const isSuperAdmin = hasRole('super_admin');
 
   const SyncIndicator = () => {
     const { syncStatus, pendingActions } = state;
@@ -30,16 +35,23 @@ export default function Layout({ children }: { children: ReactNode }) {
     return <div className="flex items-center gap-1.5 text-[0.65rem] font-bold text-success px-2 py-0.5 bg-success/10 rounded-full border border-success/20 uppercase tracking-tighter"><Wifi size={10} /> Online</div>;
   };
 
-  const SidebarContent = ({ collapsed = false }: { collapsed?: boolean }) => (
+  const SidebarContent = ({ collapsed = false }: { collapsed?: boolean }) => {
+    const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    return (
     <>
-      <div className="p-6 border-b border-sidebar-border h-24 flex flex-col items-center justify-center shrink-0 gap-3">
-        <div className="flex items-center gap-3 w-full">
-          <img src="/logo.png" alt="Pancho Burger Logo" className={`rounded-xl object-cover transition-all ${collapsed ? 'w-10 h-10 mx-auto' : 'w-8 h-8'}`} />
-          {!collapsed && (
-            <h1 className="text-[1.1rem] font-bold font-display tracking-tight text-sidebar-foreground uppercase shrink-0">
-              Pancho Burger
-            </h1>
-          )}
+      <div className="p-4 border-b border-sidebar-border shrink-0 space-y-3">
+        <div className="flex items-center gap-3">
+          <Link to="/perfil" className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+              {initials}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || 'Usuario'}</p>
+                <p className="text-[0.65rem] text-sidebar-foreground/50 truncate">{userTenant?.name || ''}</p>
+              </div>
+            )}
+          </Link>
         </div>
         {!collapsed && <SyncIndicator />}
       </div>
@@ -65,7 +77,92 @@ export default function Layout({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-      </nav>
+
+        {/* Divider */}
+        <div className="my-3 border-t border-sidebar-border" />
+
+        {/* Subscription link */}
+        <Link
+          to="/suscripcion"
+          title={collapsed ? 'Suscripción' : undefined}
+          onClick={() => setOpen(false)}
+          className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
+            pathname === '/suscripcion'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+          }`}
+        >
+          <CreditCard size={20} />
+          {!collapsed && (
+            <>
+              <span className="flex-1">Suscripción</span>
+              {isExpired && (
+                <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+              )}
+            </>
+          )}
+        </Link>
+
+        {/* Admin link (super_admin only) */}
+          {isSuperAdmin && (
+            <Link
+              to="/admin"
+              title={collapsed ? 'Admin' : undefined}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
+                pathname === '/admin'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+              }`}
+            >
+              <Shield size={20} />
+              {!collapsed && <span className="flex-1">Admin</span>}
+            </Link>
+          )}
+
+          {/* Team */}
+          <Link
+            to="/equipo"
+            title={collapsed ? 'Equipo' : undefined}
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
+              pathname === '/equipo'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            }`}
+          >
+            <Users size={20} />
+            {!collapsed && <span className="flex-1">Equipo</span>}
+          </Link>
+
+          {/* Profile */}
+          <Link
+            to="/perfil"
+            title={collapsed ? 'Perfil' : undefined}
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
+              pathname === '/perfil'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            }`}
+          >
+            <User size={20} />
+            {!collapsed && <span className="flex-1">Perfil</span>}
+          </Link>
+        </nav>
+      {/* Sign out */}
+      <div className="p-3">
+        <Button
+          variant="ghost"
+          onClick={() => signOut()}
+          className={`w-full flex items-center gap-3 py-3 rounded-md text-sm font-medium text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all ${collapsed ? 'justify-center px-0' : 'px-4'}`}
+          title="Cerrar Sesión"
+        >
+          <LogOut size={20} />
+          {!collapsed && <span className="flex-1 text-left">Cerrar Sesión</span>}
+        </Button>
+      </div>
+
       {/* Desktop Collapse Toggle */}
       <div className={`hidden md:flex p-3 border-t border-sidebar-border ${collapsed ? 'justify-center' : 'justify-end'}`}>
         <Button
@@ -80,6 +177,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </div>
     </>
   );
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

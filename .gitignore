@@ -26,3 +26,15 @@ dist-ssr
 # AI tooling
 .playwright-mcp/
 .atl/
+.impeccable/
+skills-lock.json
+
+# Design docs (not code)
+DESIGN.md
+PRODUCT.md
+
+# Snapshots / screenshots
+*.snapshot.yml
+dialog-snapshot.yml
+landing-snapshot.yml
+impeccable-screenshot.png

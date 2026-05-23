@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, ShoppingBag, Ticket, Search, ArrowLeft, Banknote, Clock } from 'lucide-react';
+import RateDisplay from '@/components/RateDisplay';
 import WeightStepper from '@/components/WeightStepper';
 import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
 import { OrderItem, PaymentMethod, PaymentStatus } from '@/types';
@@ -157,10 +158,7 @@ export default function NewOrder() {
           {editId ? `Editando Pedido #${originalTicket}` : 'Nuevo Pedido'}
         </h1>
         {currentDay && (
-          <div className="flex items-center gap-2 bg-muted/50 px-4 py-2 rounded-lg border border-border/40 shadow-inner-sm">
-            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Tasa BCV/Día:</span>
-            <span className="font-display font-bold text-primary">{currentDay.exchangeRate?.toFixed(4)} Bs</span>
-          </div>
+          <RateDisplay rate={currentDay.exchangeRate} openedAt={currentDay.openedAt} variant="badge" />
         )}
       </div>
 

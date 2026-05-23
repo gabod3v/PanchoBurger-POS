@@ -138,7 +138,8 @@ describe('Index (Dashboard) page', () => {
     const Dashboard = (await import('@/pages/Index')).default;
     renderWithRouter(<Dashboard />);
 
-    expect(screen.getByText('Nuevo Pedido')).toBeInTheDocument();
+    // "Nuevo Pedido" appears in header CTA AND quick actions since day is open
+    expect(screen.getAllByText('Nuevo Pedido').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Ver Pedidos')).toBeInTheDocument();
     expect(screen.getByText('Caja')).toBeInTheDocument();
     expect(screen.getByText('Menú')).toBeInTheDocument();

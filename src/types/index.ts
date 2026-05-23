@@ -61,6 +61,48 @@ export interface Category {
   name: string;
 }
 
+export type UserRole = 'owner' | 'manager' | 'cashier' | 'kitchen_staff' | 'super_admin';
+
+export interface Profile {
+  id: string;
+  tenant_id: string;
+  full_name: string;
+  role: UserRole;
+  is_active: boolean;
+  document_id?: string;
+  phone?: string;
+  rif?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url?: string;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  tenant_id: string;
+  plan: 'basic' | 'professional' | 'enterprise';
+  status: 'active' | 'expired' | 'trial' | 'pending_verification';
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Location {
+  id: string;
+  tenant_id: string;
+  name: string;
+  address: string;
+}
+
 export interface AppState {
   products: Product[];
   categories: Category[];

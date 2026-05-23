@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BarChart3, DollarSign, TrendingUp, ShoppingBag, ArrowLeft, Loader2, Trash2, Plus, ClipboardList, Package, Banknote, CreditCard, Smartphone, Coins, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
+import RateDisplay from '@/components/RateDisplay';
 import { DaySession, Order, OrderItem, PaymentMethod } from '@/types';
 import { formatQty, formatItemSummary } from '@/lib/format';
 import { toast } from 'sonner';
@@ -103,6 +104,26 @@ export default function DaySummary() {
   const totalPaidUSD = paidOrders.reduce((s, o) => s + o.totalUSD, 0);
   const totalPendingUSD = pendingOrders.reduce((s, o) => s + o.totalUSD, 0);
 
+  // Productos más vendidos (ranking)
+  const productSales = completed.reduce((acc, o) => {
+    o.items.forEach(item => {
+      const existing = acc.find(p => p.id === item.product.id);
+      if (existing) {
+        existing.qty += item.quantity;
+        existing.revenueUSD += parseFloat(item.product.price.toString()) * item.quantity;
+      } else {
+        acc.push({
+          id: item.product.id,
+          name: item.product.name,
+          qty: item.quantity,
+          revenueUSD: parseFloat(item.product.price.toString()) * item.quantity,
+        });
+      }
+    });
+    return acc;
+  }, [] as { id: string; name: string; qty: number; revenueUSD: number }[])
+    .sort((a, b) => b.qty - a.qty);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-pulse">
@@ -139,7 +160,7 @@ export default function DaySummary() {
               {id || !session.isOpen ? 'Resumen de Cierre' : 'Resumen del Día'}
             </h1>
             <p className="text-muted-foreground">
-              {session.date} — Tasa: {session.exchangeRate} Bs/$ • 
+              {session.date} — <RateDisplay rate={session.exchangeRate} variant="badge" /> • 
               {session.isOpen ? ' (En curso)' : ' (Cerrado)'}
             </p>
           </div>
@@ -283,6 +304,43 @@ export default function DaySummary() {
           )}
         </div>
       </div>
+
+      {/* Productos más vendidos */}
+      {productSales.length > 0 && (
+        <div className="pos-card p-6 mb-8">
+          <h2 className="font-bold text-lg font-display mb-4 flex items-center gap-2">
+            <Package className="text-primary" size={20} />
+            Productos Más Vendidos
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/50 text-left text-muted-foreground font-bold">
+                  <th className="pb-3 pr-4">#</th>
+                  <th className="pb-3 pr-4">Producto</th>
+                  <th className="pb-3 pr-4 text-right">Cantidad</th>
+                  <th className="pb-3 pr-4 text-right">Total USD</th>
+                  <th className="pb-3 text-right">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productSales.map((p, idx) => {
+                  const pct = ((p.qty / productSales.reduce((s, x) => s + x.qty, 0)) * 100).toFixed(1);
+                  return (
+                    <tr key={p.id} className={`border-b border-border/30 transition-colors ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/10'}`}>
+                      <td className="py-3 pr-4 font-bold text-primary">{idx + 1}</td>
+                      <td className="py-3 pr-4 font-medium">{p.name}</td>
+                      <td className="py-3 pr-4 text-right font-bold">{p.qty.toFixed(p.qty % 1 === 0 ? 0 : 2)}</td>
+                      <td className="py-3 pr-4 text-right text-success font-bold">${p.revenueUSD.toFixed(2)}</td>
+                      <td className="py-3 text-right text-muted-foreground">{pct}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {completed.length > 0 && (
         <div className="pos-card mb-8 p-6">

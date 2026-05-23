@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useMemo, ReactNode } from 'react';
 import { Product, Order, DaySession, AppState, OrderItem, OrderStatus, SyncStatus, PendingAction, PaymentMethod, PaymentStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEY = 'pancho_burger_state';
 
@@ -129,6 +130,8 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { tenant } = useAuth();
+  const tenantId = tenant?.id;
 
   // Persistence: Save state on every change
   useEffect(() => {
@@ -274,9 +277,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const performMutation = async (type: 'INSERT' | 'UPDATE' | 'DELETE', table: string, data: any, filterColumn: string = 'id', filterValue?: any) => {
     const fVal = filterValue ?? data.id;
+    // Inject tenant_id for INSERT operations when available
+    const mutationData = (type === 'INSERT' && tenantId)
+      ? { ...data, tenant_id: tenantId }
+      : data;
     try {
-      if (type === 'INSERT') await supabase.from(table).insert([data]);
-      else if (type === 'UPDATE') await supabase.from(table).update(data).eq(filterColumn, fVal);
+      if (type === 'INSERT') await supabase.from(table).insert([mutationData]);
+      else if (type === 'UPDATE') await supabase.from(table).update(mutationData).eq(filterColumn, fVal);
       else if (type === 'DELETE') await supabase.from(table).delete().eq(filterColumn, fVal);
     } catch (e) {
       console.warn(`Mutation failed, queueing for later: ${table}`, e);
@@ -286,7 +293,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           id: crypto.randomUUID(), 
           type, 
           table, 
-          data, 
+          data: mutationData, 
           filterColumn, 
           filterValue: fVal, 
           timestamp: Date.now() 

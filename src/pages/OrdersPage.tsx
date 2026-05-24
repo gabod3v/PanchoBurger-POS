@@ -64,6 +64,20 @@ export default function OrdersPage() {
     const items = o.items.map(i =>
       `  ${i.quantity}× ${i.product.name}  $${(i.product.price * i.quantity).toFixed(2)}`
     ).join('\n');
+
+    let paymentLine = '';
+    if (o.paymentStatus === 'paid' && o.paymentMethod) {
+      paymentLine = `\nPagado: ${paymentMethodLabels[o.paymentMethod]?.label || o.paymentMethod}`;
+      if (o.paymentMethod === 'pagomovil' && o.paymentReference) {
+        paymentLine += ` Ref: ${o.paymentReference}`;
+      }
+    } else if (o.paymentMethod === 'pagomovil' && o.paymentReference) {
+      // Show pagomovil details even when pending — for sharing with customer
+      paymentLine = `\nPagomóvil Ref: ${o.paymentReference}`;
+    } else {
+      paymentLine = '\nPendiente de pago';
+    }
+
     return (
       `🧾 *PEDIDO #${o.ticketNumber}*\n` +
       `Cliente: ${o.customerName}\n` +
@@ -71,9 +85,7 @@ export default function OrdersPage() {
       `\n${items}\n` +
       `\n─────────────────\n` +
       `*Total: $${o.totalUSD.toFixed(2)}*  (Bs ${o.totalLocal.toFixed(2)})` +
-      (o.paymentStatus === 'paid' && o.paymentMethod
-        ? `\nPagado: ${o.paymentMethod}`
-        : '\nPendiente de pago')
+      paymentLine
     );
   };
 

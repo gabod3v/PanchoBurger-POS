@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useMemo, useRef, ReactNode } from 'react';
 import { Product, Order, DaySession, AppState, OrderItem, OrderStatus, SyncStatus, PendingAction, PaymentMethod, PaymentStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -132,6 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { tenant, initialized: authInitialized } = useAuth();
   const tenantId = tenant?.id;
+  const initialLoadDone = useRef(false);
 
   // Persistence: Save state on every change
   useEffect(() => {
@@ -187,6 +188,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!authInitialized) return; // Esperar a que AuthContext cargue la sesión
+    if (initialLoadDone.current) return; // Solo cargar UNA vez
+    initialLoadDone.current = true;
 
     if (!supabase) {
       console.warn('App: Supabase no configurado, usando datos locales');

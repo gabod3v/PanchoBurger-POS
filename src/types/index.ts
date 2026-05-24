@@ -98,6 +98,10 @@ export interface Tenant {
   primary_color?: string | null;
   accent_color?: string | null;
   sidebar_color?: string | null;
+  bank_name?: string | null;
+  bank_phone?: string | null;
+  bank_rif?: string | null;
+  bank_beneficiary?: string | null;
   owner_id: string;
   created_at: string;
   updated_at: string;

@@ -12,7 +12,6 @@ import PrintTicket from '@/components/PrintTicket';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -62,7 +61,7 @@ export default function OrdersPage() {
     }
   };
 
-  const formatOrderAsText = (o: Order, pagoInfo?: { bank_name: string; phone: string; rif: string; beneficiary_name: string }): string => {
+  const formatOrderAsText = (o: Order, pagoInfo?: { bank_name: string; bank_phone: string; bank_rif: string; bank_beneficiary: string }): string => {
     const date = new Date(o.createdAt).toLocaleString('es-VE');
     const items = o.items.map(i =>
       `  ${i.quantity}× ${i.product.name}  $${(i.product.price * i.quantity).toFixed(2)}`
@@ -73,9 +72,9 @@ export default function OrdersPage() {
       : pagoInfo
         ? `\n\n📲 *DATOS PARA PAGO*` +
           `\nBanco: ${pagoInfo.bank_name}` +
-          `\nTitular: ${pagoInfo.beneficiary_name}` +
-          `\nRIF: ${pagoInfo.rif}` +
-          `\nTeléfono: ${pagoInfo.phone}`
+          `\nTitular: ${pagoInfo.bank_beneficiary}` +
+          `\nRIF: ${pagoInfo.bank_rif}` +
+          `\nTeléfono: ${pagoInfo.bank_phone}`
         : '';
 
     return (
@@ -90,16 +89,17 @@ export default function OrdersPage() {
   };
 
   const handleShare = async (o: Order) => {
-    // Fetch company payment info for unpaid orders
-    let pagoInfo: { bank_name: string; phone: string; rif: string; beneficiary_name: string } | undefined;
-    if (o.paymentStatus !== 'paid') {
-      const { data } = await supabase!
-        .from('configuracion_pago')
-        .select('bank_name, phone, rif, beneficiary_name')
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        pagoInfo = data;
+    // Use tenant's payment info for unpaid orders
+    let pagoInfo: { bank_name: string; bank_phone: string; bank_rif: string; bank_beneficiary: string } | undefined;
+    if (o.paymentStatus !== 'paid' && tenant) {
+      const allSet = tenant.bank_name && tenant.bank_phone && tenant.bank_beneficiary;
+      if (allSet) {
+        pagoInfo = {
+          bank_name: tenant.bank_name || '',
+          bank_phone: tenant.bank_phone || '',
+          bank_rif: tenant.bank_rif || '',
+          bank_beneficiary: tenant.bank_beneficiary || '',
+        };
       }
     }
 

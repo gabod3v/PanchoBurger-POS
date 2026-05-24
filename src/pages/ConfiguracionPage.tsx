@@ -115,6 +115,10 @@ export default function ConfiguracionPage() {
   const [sidebarHex, setSidebarHex] = useState(
     tenant?.sidebar_color ? hslToHex(tenant.sidebar_color) : '#ffffff'
   );
+  const [bankName, setBankName] = useState(tenant?.bank_name || '');
+  const [bankPhone, setBankPhone] = useState(tenant?.bank_phone || '');
+  const [bankRif, setBankRif] = useState(tenant?.bank_rif || '');
+  const [bankBeneficiary, setBankBeneficiary] = useState(tenant?.bank_beneficiary || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync from tenant if it changes
@@ -126,6 +130,10 @@ export default function ConfiguracionPage() {
       if (tenant.primary_color) setPrimaryHex(hslToHex(tenant.primary_color));
       if (tenant.accent_color) setAccentHex(hslToHex(tenant.accent_color));
       if (tenant.sidebar_color) setSidebarHex(hslToHex(tenant.sidebar_color));
+      setBankName(tenant.bank_name || '');
+      setBankPhone(tenant.bank_phone || '');
+      setBankRif(tenant.bank_rif || '');
+      setBankBeneficiary(tenant.bank_beneficiary || '');
     }
   }, [tenant]);
 
@@ -193,6 +201,18 @@ export default function ConfiguracionPage() {
         accent_color: accentColor,
         sidebar_color: sidebarColor,
       });
+
+      // Save payment config
+      const { error: bankError } = await supabase!
+        .from('inquilinos')
+        .update({
+          bank_name: bankName.trim() || null,
+          bank_phone: bankPhone.trim() || null,
+          bank_rif: bankRif.trim() || null,
+          bank_beneficiary: bankBeneficiary.trim() || null,
+        })
+        .eq('id', tenant.id);
+      if (bankError) throw bankError;
 
       // Re-apply branding from the saved values
       applyBranding({
@@ -312,6 +332,32 @@ export default function ConfiguracionPage() {
                   style={{ background: hslToHex(p.hsl) }} />
               ))}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Info */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="font-display text-lg">Datos de Pago</CardTitle>
+          <CardDescription>Estos datos aparecen en el ticket compartido para que el cliente sepa dónde pagar</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 max-w-lg">
+          <div className="space-y-2">
+            <Label htmlFor="bankName">Banco</Label>
+            <Input id="bankName" value={bankName} onChange={e => setBankName(e.target.value)} placeholder="BANCO DE VENEZUELA" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankBeneficiary">Titular / Beneficiario</Label>
+            <Input id="bankBeneficiary" value={bankBeneficiary} onChange={e => setBankBeneficiary(e.target.value)} placeholder="PedidoClaro C.A." />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankRif">RIF</Label>
+            <Input id="bankRif" value={bankRif} onChange={e => setBankRif(e.target.value)} placeholder="J-12345678-9" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bankPhone">Teléfono</Label>
+            <Input id="bankPhone" value={bankPhone} onChange={e => setBankPhone(e.target.value)} placeholder="04121234567" />
           </div>
         </CardContent>
       </Card>

@@ -206,34 +206,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         let orders: Order[] = [];
         if (openSession) {
-          const { data: ordersData } = await supabase.from('pedidos').select(`
-            *,
-            items:order_items(quantity, product:products(*))
-          `).eq('day_session_id', openSession.id);
+          const { data: ordersData } = await supabase
+            .from('pedidos')
+            .select('*')
+            .eq('day_session_id', openSession.id);
 
-          if (ordersData) {
+          if (ordersData && ordersData.length > 0) {
+            // Fetch items for all orders in one query
+            const orderIds = ordersData.map(o => o.id);
+            const { data: itemsData } = await supabase
+              .from('order_items')
+              .select('*, product:productos(*)')
+              .in('order_id', orderIds);
+
+            // Group items by order_id
+            const itemsByOrder: Record<string, any[]> = {};
+            if (itemsData) {
+              for (const item of itemsData) {
+                if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+                itemsByOrder[item.order_id].push(item);
+              }
+            }
+
             orders = ordersData.map(o => ({
               id: o.id,
               ticketNumber: o.ticket_number,
               customerName: o.customer_name,
-              totalUSD: o.total_usd,
-              totalLocal: o.total_local,
+              totalUSD: parseFloat(o.total_usd),
+              totalLocal: o.total_local ? parseFloat(o.total_local) : 0,
               status: o.status,
               paymentStatus: o.payment_status || 'pending',
               paymentMethod: o.payment_method,
               paymentReference: o.payment_reference,
               paidAt: o.paid_at,
               createdAt: o.created_at,
-              items: o.items.map((i: any) => ({
-                quantity: i.quantity,
-                  product: {
-                    id: i.product.id,
-                    name: i.product.name,
-                    price: parseFloat(i.product.price),
-                    category: i.product.category,
-                    image_url: i.product.image_url,
-                    soldByWeight: i.product.sold_by_weight || false,
-                  }
+              items: (itemsByOrder[o.id] || []).map((i: any) => ({
+                quantity: parseFloat(i.quantity),
+                product: {
+                  id: i.product.id,
+                  name: i.product.name,
+                  price: parseFloat(i.product.price),
+                  category: i.product.category,
+                  image_url: i.product.image_url,
+                  soldByWeight: i.product.sold_by_weight || false,
+                }
               }))
             }));
           }
@@ -518,27 +534,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const fetchOrdersBySession = async (sessionId: string): Promise<Order[]> => {
     if (!supabase) return [];
 
-    const { data: ordersData } = await supabase.from('pedidos').select(`
-      *,
-      items:order_items(quantity, product:products(*))
-    `).eq('day_session_id', sessionId);
+    const { data: ordersData } = await supabase
+      .from('pedidos')
+      .select('*')
+      .eq('day_session_id', sessionId);
 
-    if (!ordersData) return [];
+    if (!ordersData || ordersData.length === 0) return [];
+
+    const orderIds = ordersData.map(o => o.id);
+    const { data: itemsData } = await supabase
+      .from('order_items')
+      .select('*, product:productos(*)')
+      .in('order_id', orderIds);
+
+    const itemsByOrder: Record<string, any[]> = {};
+    if (itemsData) {
+      for (const item of itemsData) {
+        if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+        itemsByOrder[item.order_id].push(item);
+      }
+    }
 
     return ordersData.map(o => ({
       id: o.id,
       ticketNumber: o.ticket_number,
       customerName: o.customer_name,
       totalUSD: parseFloat(o.total_usd),
-      totalLocal: parseFloat(o.total_local),
+      totalLocal: o.total_local ? parseFloat(o.total_local) : 0,
       status: o.status,
       paymentStatus: o.payment_status || 'pending',
       paymentMethod: o.payment_method,
       paymentReference: o.payment_reference,
       paidAt: o.paid_at,
       createdAt: o.created_at,
-      items: o.items.map((i: any) => ({
-        quantity: i.quantity,
+      items: (itemsByOrder[o.id] || []).map((i: any) => ({
+        quantity: parseFloat(i.quantity),
         product: {
           id: i.product.id,
           name: i.product.name,

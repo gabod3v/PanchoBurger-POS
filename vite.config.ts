@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["logo.png", "logo.svg", "favicon.svg", "robots.txt"],
       manifest: {
         name: "PedidoClaro — POS para restaurantes",

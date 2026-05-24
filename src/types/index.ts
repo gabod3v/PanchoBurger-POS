@@ -65,17 +65,29 @@ export interface Category {
 
 export type UserRole = 'owner' | 'manager' | 'cashier' | 'kitchen_staff' | 'super_admin';
 
+export type BranchRole = 'owner' | 'admin' | 'staff';
+
 export interface Profile {
   id: string;
   tenant_id: string;
   full_name: string;
   role: UserRole;
   is_active: boolean;
+  avatar_url?: string;
   document_id?: string;
   phone?: string;
   rif?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface BranchPermission {
+  id: string;
+  user_id: string;
+  ubicacion_id: string;
+  role: BranchRole;
+  is_active: boolean;
+  created_at?: string;
 }
 
 export interface Tenant {

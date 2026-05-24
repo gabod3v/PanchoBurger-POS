@@ -7,6 +7,7 @@ import { useBranches } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -85,9 +86,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div className="p-4 border-b border-sidebar-border shrink-0 space-y-3">
         <div className="flex items-center gap-3">
           <Link to="/perfil" className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center text-sm font-bold shrink-0">
-              {initials}
-            </div>
+            <Avatar className="w-9 h-9 rounded-xl">
+              {profile?.avatar_url ? (
+                <AvatarImage src={profile.avatar_url} alt="Avatar" className="object-cover" />
+              ) : null}
+              <AvatarFallback className="text-sm font-bold bg-primary/20 text-primary rounded-xl">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
             {!collapsed && (
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || 'Usuario'}</p>

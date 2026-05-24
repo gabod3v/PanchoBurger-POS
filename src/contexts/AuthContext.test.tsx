@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { supabase } from '@/lib/supabase';
+import { useAuth, AuthProvider } from './AuthContext';
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -26,13 +28,9 @@ describe('AuthContext - signUp metadata', () => {
     });
     vi.mocked(supabase.auth.signUp).mockImplementation(mockSignUp);
 
-    // Dynamically import so we get the module with mocked supabase
-    const { useAuth, AuthProvider } = await import('./AuthContext');
-
     let result: any;
     function TestConsumer() {
       const ctx = useAuth();
-      // Call signUp with metadata
       result = ctx.signUp('test@test.com', '123456', 'Juan Pérez', 'Mi Restaurante', {
         document_id: 'V-12345678',
         phone: '+584121234567',
@@ -41,14 +39,12 @@ describe('AuthContext - signUp metadata', () => {
       return null;
     }
 
-    const { render } = await import('@testing-library/react');
     render(
       <AuthProvider>
         <TestConsumer />
       </AuthProvider>
     );
 
-    // Wait for the effect to run
     await vi.waitFor(() => {
       expect(mockSignUp).toHaveBeenCalled();
     });
@@ -75,15 +71,12 @@ describe('AuthContext - signUp metadata', () => {
     });
     vi.mocked(supabase.auth.signUp).mockImplementation(mockSignUp);
 
-    const { useAuth, AuthProvider } = await import('./AuthContext');
-
     function TestConsumer() {
       const ctx = useAuth();
       ctx.signUp('test@test.com', '123456', 'Juan Pérez', 'Mi Restaurante');
       return null;
     }
 
-    const { render } = await import('@testing-library/react');
     render(
       <AuthProvider>
         <TestConsumer />
@@ -113,8 +106,6 @@ describe('AuthContext - signUp metadata', () => {
     });
     vi.mocked(supabase.auth.signUp).mockImplementation(mockSignUp);
 
-    const { useAuth, AuthProvider } = await import('./AuthContext');
-
     function TestConsumer() {
       const ctx = useAuth();
       ctx.signUp('test@test.com', '123456', 'Juan Pérez', 'Mi Restaurante', {
@@ -123,7 +114,6 @@ describe('AuthContext - signUp metadata', () => {
       return null;
     }
 
-    const { render } = await import('@testing-library/react');
     render(
       <AuthProvider>
         <TestConsumer />
@@ -153,7 +143,6 @@ describe('AuthContext - signUp metadata', () => {
     });
 
     it('calls applyBranding with tenant data after loadUserData', async () => {
-      // Mock a session to trigger loadUserData
       const mockSession = {
         user: { id: 'user-1', email: 'test@test.com' },
       };
@@ -163,7 +152,6 @@ describe('AuthContext - signUp metadata', () => {
         error: null,
       });
 
-      // Mock the perfiles query to return a profile
       const mockPerfilesQuery = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -181,7 +169,6 @@ describe('AuthContext - signUp metadata', () => {
         }),
       };
 
-      // Mock the inquilinos query to return a tenant with branding fields
       const mockInquilinosQuery = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -202,7 +189,6 @@ describe('AuthContext - signUp metadata', () => {
         }),
       };
 
-      // Mock suscripciones query
       const mockSuscripcionesQuery = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -212,7 +198,6 @@ describe('AuthContext - signUp metadata', () => {
         }),
       };
 
-      // Chain .from() calls
       vi.mocked(supabase.from).mockImplementation((table: string) => {
         if (table === 'perfiles') return mockPerfilesQuery as any;
         if (table === 'inquilinos') return mockInquilinosQuery as any;
@@ -220,40 +205,368 @@ describe('AuthContext - signUp metadata', () => {
         return {} as any;
       });
 
-      const { useAuth, AuthProvider } = await import('./AuthContext');
-
       let authState: any = null;
       function TestConsumer() {
         const ctx = useAuth();
-        // Store state for assertions
         if (ctx.initialized && !authState) {
           authState = { tenant: ctx.tenant, initialized: ctx.initialized };
         }
         return null;
       }
 
-      const { render } = await import('@testing-library/react');
       render(
         <AuthProvider>
           <TestConsumer />
         </AuthProvider>
       );
 
-      // Wait for the auth to initialize
       await vi.waitFor(() => {
         expect(authState?.initialized).toBe(true);
       });
 
-      // The tenant should include all the branding fields
       expect(authState?.tenant?.primary_color).toBe('0 72% 51%');
       expect(authState?.tenant?.accent_color).toBe('217 91% 60%');
       expect(authState?.tenant?.sidebar_color).toBe('0 0% 98%');
 
-      // Verify the CSS vars were set by applyBranding
       const root = document.documentElement;
       expect(root.style.getPropertyValue('--primary')).toBe('0 72% 51%');
       expect(root.style.getPropertyValue('--accent')).toBe('217 91% 60%');
       expect(root.style.getPropertyValue('--sidebar-background')).toBe('0 0% 98%');
+    });
+  });
+
+  describe('AuthContext - avatar_url', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('loads avatar_url when present in profile', async () => {
+      const mockSession = {
+        user: { id: 'user-1', email: 'test@test.com' },
+      };
+
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      const mockPerfilesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'user-1',
+            tenant_id: 'tenant-1',
+            full_name: 'Test User',
+            role: 'owner',
+            is_active: true,
+            avatar_url: 'https://example.com/avatar.jpg',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockInquilinosQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tenant-1',
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            owner_id: 'user-1',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockSuscripcionesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'perfiles') return mockPerfilesQuery as any;
+        if (table === 'inquilinos') return mockInquilinosQuery as any;
+        if (table === 'suscripciones') return mockSuscripcionesQuery as any;
+        return {} as any;
+      });
+
+      let profile: any = null;
+      function TestConsumer() {
+        const ctx = useAuth();
+        if (ctx.initialized && !profile) {
+          profile = ctx.profile;
+        }
+        return null;
+      }
+
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      await vi.waitFor(() => {
+        expect(profile?.avatar_url).toBe('https://example.com/avatar.jpg');
+      });
+    });
+
+    it('has avatar_url undefined when profile lacks it', async () => {
+      const mockSession = {
+        user: { id: 'user-1', email: 'test@test.com' },
+      };
+
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      const mockPerfilesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'user-1',
+            tenant_id: 'tenant-1',
+            full_name: 'Test User',
+            role: 'cashier',
+            is_active: true,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockInquilinosQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tenant-1',
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            owner_id: 'user-1',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockSuscripcionesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'perfiles') return mockPerfilesQuery as any;
+        if (table === 'inquilinos') return mockInquilinosQuery as any;
+        if (table === 'suscripciones') return mockSuscripcionesQuery as any;
+        return {} as any;
+      });
+
+      let profile: any = null;
+      function TestConsumer() {
+        const ctx = useAuth();
+        if (ctx.initialized && !profile) {
+          profile = ctx.profile;
+        }
+        return null;
+      }
+
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      await vi.waitFor(() => {
+        expect(profile?.avatar_url).toBeUndefined();
+      });
+    });
+  });
+
+  describe('AuthContext - hasBranchAccess', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('returns true for owner role regardless of branchId', async () => {
+      const mockSession = {
+        user: { id: 'user-1', email: 'test@test.com' },
+      };
+
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      const mockPerfilesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'user-1',
+            tenant_id: 'tenant-1',
+            full_name: 'Owner User',
+            role: 'owner',
+            is_active: true,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockInquilinosQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tenant-1',
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            owner_id: 'user-1',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockSuscripcionesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'perfiles') return mockPerfilesQuery as any;
+        if (table === 'inquilinos') return mockInquilinosQuery as any;
+        if (table === 'suscripciones') return mockSuscripcionesQuery as any;
+        return {} as any;
+      });
+
+      let hasBranchAccessFn: Function | null = null;
+      function TestConsumer() {
+        const ctx = useAuth();
+        if (ctx.initialized && !hasBranchAccessFn) {
+          hasBranchAccessFn = ctx.hasBranchAccess;
+        }
+        return null;
+      }
+
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      await vi.waitFor(() => {
+        expect(hasBranchAccessFn).toBeDefined();
+        expect(typeof hasBranchAccessFn).toBe('function');
+      });
+
+      expect(hasBranchAccessFn!('any-branch-id')).toBe(true);
+    });
+
+    it('returns false for cashier role', async () => {
+      const mockSession = {
+        user: { id: 'user-1', email: 'test@test.com' },
+      };
+
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      const mockPerfilesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'user-1',
+            tenant_id: 'tenant-1',
+            full_name: 'Cashier User',
+            role: 'cashier',
+            is_active: true,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockInquilinosQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tenant-1',
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            owner_id: 'user-1',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      const mockSuscripcionesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'perfiles') return mockPerfilesQuery as any;
+        if (table === 'inquilinos') return mockInquilinosQuery as any;
+        if (table === 'suscripciones') return mockSuscripcionesQuery as any;
+        return {} as any;
+      });
+
+      let hasBranchAccessFn: Function | null = null;
+      function TestConsumer() {
+        const ctx = useAuth();
+        if (ctx.initialized && !hasBranchAccessFn) {
+          hasBranchAccessFn = ctx.hasBranchAccess;
+        }
+        return null;
+      }
+
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      await vi.waitFor(() => {
+        expect(hasBranchAccessFn).toBeDefined();
+        expect(typeof hasBranchAccessFn).toBe('function');
+      });
+
+      expect(hasBranchAccessFn!('any-branch-id')).toBe(false);
     });
   });
 });

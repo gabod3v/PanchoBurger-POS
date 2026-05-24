@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranches } from '@/contexts/BranchContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +12,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { UserPlus, Users, Mail, Trash2, Loader2 } from 'lucide-react';
+import { UserPlus, Users, Mail, Trash2, Loader2, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import type { UserRole } from '@/types';
+import type { UserRole, BranchPermission } from '@/types';
 
 type TeamMember = {
   id: string;
@@ -56,10 +57,24 @@ const INVITE_ROLES: { value: UserRole; label: string }[] = [
   { value: 'kitchen_staff', label: 'Cocina' },
 ];
 
+/**
+ * Check if the current user can assign branches to the target user.
+ */
+function canAssignBranches(currentUserRole: string, targetUserRole: string): boolean {
+  if (!['owner', 'super_admin'].includes(currentUserRole)) return false;
+  if (targetUserRole === 'owner' || targetUserRole === 'super_admin') return false;
+  return true;
+}
+
+export { canAssignBranches };
+
 export default function TeamSection() {
   const { tenant, profile } = useAuth();
+  const { branches } = useBranches();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [memberAssignments, setMemberAssignments] = useState<Record<string, BranchPermission[]>>({});
+  const [savingBranch, setSavingBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('cashier');
@@ -67,11 +82,13 @@ export default function TeamSection() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const isOwner = profile?.role === 'owner' || profile?.role === 'super_admin';
+  const activeBranches = branches.filter(b => b.is_active !== false);
 
   useEffect(() => {
     if (tenant) {
       loadMembers();
       loadInvitations();
+      loadBranchAssignments();
     }
   }, [tenant]);
 
@@ -100,6 +117,21 @@ export default function TeamSection() {
       .eq('tenant_id', tenant!.id)
       .order('created_at', { ascending: false });
     if (data) setInvitations(data as Invitation[]);
+  };
+
+  const loadBranchAssignments = async () => {
+    if (!tenant) return;
+    const { data } = await supabase!
+      .from('perfiles_ubicaciones')
+      .select('*');
+    if (data) {
+      const assignments: Record<string, BranchPermission[]> = {};
+      for (const row of data as BranchPermission[]) {
+        if (!assignments[row.user_id]) assignments[row.user_id] = [];
+        assignments[row.user_id].push(row);
+      }
+      setMemberAssignments(assignments);
+    }
   };
 
   const handleInvite = async () => {
@@ -159,6 +191,50 @@ export default function TeamSection() {
     }
   };
 
+  const handleBranchToggle = async (memberId: string, branchId: string, currentlyAssigned: boolean) => {
+    if (!tenant || !profile) return;
+    setSavingBranch(memberId);
+
+    try {
+      if (currentlyAssigned) {
+        // Remove assignment
+        const existing = memberAssignments[memberId]?.find(
+          (p: BranchPermission) => p.ubicacion_id === branchId
+        );
+        if (existing) {
+          const { error } = await supabase!
+            .from('perfiles_ubicaciones')
+            .delete()
+            .eq('id', existing.id);
+          if (error) throw error;
+        }
+      } else {
+        // Add assignment
+        const { error } = await supabase!
+          .from('perfiles_ubicaciones')
+          .insert({
+            user_id: memberId,
+            ubicacion_id: branchId,
+            role: 'staff',
+            is_active: true,
+          });
+        if (error) throw error;
+      }
+
+      await loadBranchAssignments();
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al actualizar asignación');
+    } finally {
+      setSavingBranch(null);
+    }
+  };
+
+  const getMemberBranchIds = (memberId: string): string[] => {
+    return (memberAssignments[memberId] || [])
+      .filter((p: BranchPermission) => p.is_active)
+      .map((p: BranchPermission) => p.ubicacion_id);
+  };
+
   return (
     <Card className="border-border/50">
       <CardHeader>
@@ -216,85 +292,135 @@ export default function TeamSection() {
               <TableHead>Miembro</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Rol</TableHead>
+              <TableHead>Sucursales</TableHead>
               <TableHead>Estado</TableHead>
               {isOwner && <TableHead className="w-20 text-right">Acción</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8"><Loader2 className="animate-spin inline" size={20} /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="animate-spin inline" size={20} /></TableCell></TableRow>
             ) : members.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Sin miembros aún.</TableCell></TableRow>
-            ) : members.map(m => (
-              <TableRow key={m.id} className={!m.is_active ? 'opacity-50' : ''}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {m.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">{m.full_name}</p>
-                      {m.id === profile?.id && <p className="text-[0.65rem] text-muted-foreground">(tú)</p>}
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Sin miembros aún.</TableCell></TableRow>
+            ) : members.map(m => {
+              const assignedBranchIds = getMemberBranchIds(m.id);
+              const canAssign = isOwner && m.id !== profile?.id && canAssignBranches(profile?.role || '', m.role);
+              return (
+                <TableRow key={m.id} className={!m.is_active ? 'opacity-50' : ''}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {m.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">{m.full_name}</p>
+                        {m.id === profile?.id && <p className="text-[0.65rem] text-muted-foreground">(tú)</p>}
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{m.email || '—'}</TableCell>
-                <TableCell>
-                  {isOwner && m.id !== profile?.id ? (
-                    <Select value={m.role} onValueChange={(v) => handleRoleChange(m.id, v as UserRole)}>
-                      <SelectTrigger className={`h-7 text-xs px-2 border-0 ${ROLE_COLORS[m.role]}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {INVITE_ROLES.map(r => (
-                          <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[m.role]}`}>
-                      {ROLE_LABELS[m.role]}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {m.is_active ? (
-                    <Badge variant="success" className="text-[0.6rem]">Activo</Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[0.6rem]">Inactivo</Badge>
-                  )}
-                </TableCell>
-                {isOwner && (
-                  <TableCell className="text-right">
-                    {m.id !== profile?.id && m.role !== 'owner' && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                            <Trash2 size={14} />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Desactivar miembro</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {m.full_name} perderá acceso al sistema. Podés reactivarlo después.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleRemoveMember(m.id)} className="bg-destructive hover:bg-destructive/90">
-                              Desactivar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{m.email || '—'}</TableCell>
+                  <TableCell>
+                    {isOwner && m.id !== profile?.id ? (
+                      <Select value={m.role} onValueChange={(v) => handleRoleChange(m.id, v as UserRole)}>
+                        <SelectTrigger className={`h-7 text-xs px-2 border-0 ${ROLE_COLORS[m.role]}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INVITE_ROLES.map(r => (
+                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[m.role]}`}>
+                        {ROLE_LABELS[m.role]}
+                      </span>
                     )}
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell>
+                    {canAssign ? (
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {activeBranches.map(b => {
+                          const isAssigned = assignedBranchIds.includes(b.id);
+                          const isLoading = savingBranch === m.id;
+                          return (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => handleBranchToggle(m.id, b.id, isAssigned)}
+                              disabled={isLoading}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-medium border transition-colors ${
+                                isAssigned
+                                  ? 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
+                                  : 'bg-muted/30 text-muted-foreground border-border/30 hover:bg-muted/50'
+                              }`}
+                            >
+                              <MapPin size={10} />
+                              {b.name}
+                            </button>
+                          );
+                        })}
+                        {activeBranches.length === 0 && (
+                          <span className="text-xs text-muted-foreground">Sin sucursales activas</span>
+                        )}
+                      </div>
+                    ) : assignedBranchIds.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {activeBranches
+                          .filter(b => assignedBranchIds.includes(b.id))
+                          .map(b => (
+                            <span
+                              key={b.id}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-medium bg-primary/10 text-primary border border-primary/30"
+                            >
+                              <MapPin size={10} />
+                              {b.name}
+                            </span>
+                          ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Todas</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {m.is_active ? (
+                      <Badge variant="success" className="text-[0.6rem]">Activo</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[0.6rem]">Inactivo</Badge>
+                    )}
+                  </TableCell>
+                  {isOwner && (
+                    <TableCell className="text-right">
+                      {m.id !== profile?.id && m.role !== 'owner' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                              <Trash2 size={14} />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Desactivar miembro</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {m.full_name} perderá acceso al sistema. Podés reactivarlo después.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveMember(m.id)} className="bg-destructive hover:bg-destructive/90">
+                                Desactivar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>

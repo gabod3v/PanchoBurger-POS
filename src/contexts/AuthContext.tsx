@@ -22,6 +22,7 @@ interface AuthContextType extends AuthState {
   refreshProfile: () => Promise<void>;
   refreshTenant: () => Promise<void>;
   hasRole: (...roles: UserRole[]) => boolean;
+  hasBranchAccess: (branchId: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -222,6 +223,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roles.includes(state.profile.role);
   };
 
+  const hasBranchAccess = useCallback((branchId: string): boolean => {
+    if (!state.profile) return false;
+    // Owner and super_admin have access to all branches
+    if (['owner', 'super_admin'].includes(state.profile.role)) return true;
+    // For other roles, BranchContext handles the scoped check via perfiles_ubicaciones
+    // At the AuthContext level, we only know if the role implies full access
+    return false;
+  }, [state.profile]);
+
   return (
     <AuthContext.Provider value={{
       ...state,
@@ -231,6 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshProfile,
       refreshTenant,
       hasRole,
+      hasBranchAccess,
     }}>
       {children}
     </AuthContext.Provider>

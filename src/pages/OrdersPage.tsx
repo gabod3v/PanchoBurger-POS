@@ -78,15 +78,24 @@ export default function OrdersPage() {
   const loadPendingOrders = async () => {
     setLoadingPending(true);
     try {
-      const allPending: Order[] = [];
-      for (const session of state.sessions) {
-        const orders = await fetchOrdersBySession(session.id);
-        const pending = orders.filter(o => o.paymentStatus === 'pending');
-        allPending.push(...pending);
-      }
+      // Only show pending orders from today's open session
       const todayPending = state.orders.filter(o => o.paymentStatus === 'pending');
-      allPending.push(...todayPending);
-      setPendingOrders(allPending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+
+      // Also fetch pending from the most recent closed session of the same branch
+      // (catches carry-over without flooding with all historical sessions)
+      if (state.currentDay && state.currentDay.locationId) {
+        const branchSessions = state.sessions
+          .filter(s => s.locationId === state.currentDay!.locationId && !s.isOpen)
+          .sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime());
+
+        if (branchSessions.length > 0) {
+          const lastClosed = await fetchOrdersBySession(branchSessions[0].id);
+          const carryOver = lastClosed.filter(o => o.paymentStatus === 'pending');
+          todayPending.push(...carryOver);
+        }
+      }
+
+      setPendingOrders(todayPending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
       console.error('Error loading pending orders:', error);
     } finally {

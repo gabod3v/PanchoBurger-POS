@@ -65,18 +65,9 @@ export default function OrdersPage() {
       `  ${i.quantity}× ${i.product.name}  $${(i.product.price * i.quantity).toFixed(2)}`
     ).join('\n');
 
-    let paymentLine = '';
-    if (o.paymentStatus === 'paid' && o.paymentMethod) {
-      paymentLine = `\nPagado: ${paymentMethodLabels[o.paymentMethod]?.label || o.paymentMethod}`;
-      if (o.paymentMethod === 'pagomovil' && o.paymentReference) {
-        paymentLine += ` Ref: ${o.paymentReference}`;
-      }
-    } else if (o.paymentMethod === 'pagomovil' && o.paymentReference) {
-      // Show pagomovil details even when pending — for sharing with customer
-      paymentLine = `\nPagomóvil Ref: ${o.paymentReference}`;
-    } else {
-      paymentLine = '\nPendiente de pago';
-    }
+    const paidLine = o.paymentStatus === 'paid'
+      ? `\n✅ Pagado` + (o.paymentMethod ? ` — ${paymentMethodLabels[o.paymentMethod]?.label || o.paymentMethod}` : '')
+      : '';
 
     return (
       `🧾 *PEDIDO #${o.ticketNumber}*\n` +
@@ -85,7 +76,7 @@ export default function OrdersPage() {
       `\n${items}\n` +
       `\n─────────────────\n` +
       `*Total: $${o.totalUSD.toFixed(2)}*  (Bs ${o.totalLocal.toFixed(2)})` +
-      paymentLine
+      paidLine
     );
   };
 

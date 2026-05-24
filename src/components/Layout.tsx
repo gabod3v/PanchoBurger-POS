@@ -203,7 +203,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </Sheet>
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-              <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight">Pancho Burger</span>
+              <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight">{userTenant?.name || 'Pancho Burger'}</span>
             </div>
           </div>
         </header>

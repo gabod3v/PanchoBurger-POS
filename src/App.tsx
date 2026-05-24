@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BranchProvider } from "@/contexts/BranchContext";
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
 import PwaReloadPrompt from "@/components/PwaReloadPrompt";
@@ -40,6 +41,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
+        <BranchProvider>
         <AppProvider>
           <BrowserRouter>
             <Routes>
@@ -132,6 +134,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </AppProvider>
+        </BranchProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

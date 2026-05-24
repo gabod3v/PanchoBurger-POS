@@ -1,9 +1,11 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut, Settings, MapPin } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranches } from '@/contexts/BranchContext';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navItems = [
@@ -27,6 +29,50 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const isExpired = subscription?.status === 'expired';
   const isSuperAdmin = hasRole('super_admin');
+
+  const BranchSelector = () => {
+    const { branches, activeBranchId, setActiveBranchId } = useBranches();
+    const activeBranches = branches.filter(b => b.is_active !== false);
+    if (activeBranches.length <= 1) return null;
+    return (
+      <div className="mt-3">
+        <Select value={activeBranchId || undefined} onValueChange={setActiveBranchId}>
+          <SelectTrigger className="w-full h-9 text-xs gap-1 bg-sidebar-accent/50 border-sidebar-border">
+            <MapPin size={14} className="shrink-0 text-sidebar-foreground/50" />
+            <SelectValue placeholder="Seleccionar sucursal" />
+          </SelectTrigger>
+          <SelectContent>
+            {activeBranches.map(b => (
+              <SelectItem key={b.id} value={b.id} className="text-xs">
+                {b.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
+
+  const MobileBranchSelector = () => {
+    const { branches, activeBranchId, setActiveBranchId } = useBranches();
+    const activeBranches = branches.filter(b => b.is_active !== false);
+    if (activeBranches.length <= 1) return null;
+    return (
+      <Select value={activeBranchId || undefined} onValueChange={setActiveBranchId}>
+        <SelectTrigger className="h-6 px-1 text-[0.6rem] gap-1 border-0 bg-transparent hover:bg-sidebar-accent/30 -ml-1">
+          <MapPin size={10} className="shrink-0 text-sidebar-foreground/50" />
+          <SelectValue placeholder="Sucursal" />
+        </SelectTrigger>
+        <SelectContent>
+          {activeBranches.map(b => (
+            <SelectItem key={b.id} value={b.id} className="text-xs">
+              {b.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
 
   const SyncIndicator = () => {
     const { syncStatus, pendingActions } = state;
@@ -57,6 +103,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Link>
         </div>
         {!collapsed && <SyncIndicator />}
+        {!collapsed && <BranchSelector />}
       </div>
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map(({ to, icon: Icon, label }) => {
@@ -223,7 +270,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             </Sheet>
             <div className="flex items-center gap-2">
               <img src={userTenant?.logo_url || '/default-logo.svg'} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-              <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight">{userTenant?.name || 'PedidoClaro'}</span>
+              <div className="flex flex-col">
+                <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight leading-tight">{userTenant?.name || 'PedidoClaro'}</span>
+                <MobileBranchSelector />
+              </div>
             </div>
           </div>
         </header>

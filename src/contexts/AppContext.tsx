@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useMemo, useRe
 import { Product, Order, DaySession, AppState, OrderItem, OrderStatus, SyncStatus, PendingAction, PaymentMethod, PaymentStatus } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBranches } from '@/contexts/BranchContext';
 
 const STORAGE_KEY = 'pancho_burger_state';
 
@@ -131,8 +132,10 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { tenant, initialized: authInitialized } = useAuth();
+  const { activeBranchId, loading: branchesLoading } = useBranches();
   const tenantId = tenant?.id;
   const initialLoadDone = useRef(false);
+  const prevBranchRef = useRef<string | null>(undefined); // undefined = no check yet
 
   // Persistence: Save state on every change
   useEffect(() => {
@@ -187,29 +190,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.syncStatus, state.pendingActions]);
 
   useEffect(() => {
-    if (!authInitialized) return; // Esperar a que AuthContext cargue la sesión
-    if (initialLoadDone.current) return; // Solo cargar UNA vez
-    initialLoadDone.current = true;
-
+    if (!authInitialized || branchesLoading) return;
     if (!supabase) {
       console.warn('App: Supabase no configurado, usando datos locales');
       return;
     }
 
+    // Check if we should reload: first load OR branch changed
+    const branchChanged = prevBranchRef.current !== undefined && prevBranchRef.current !== activeBranchId;
+    if (initialLoadDone.current && !branchChanged) return;
+
+    initialLoadDone.current = true;
+    prevBranchRef.current = activeBranchId;
+
     const loadData = async () => {
       try {
         const { data: products } = await supabase.from('productos').select('*');
         const { data: categories } = await supabase.from('categorias').select('*');
-        const { data: sessions = [] } = await supabase.from('sesiones_dia').select('*').order('opened_at', { ascending: false });
+
+        // Filter sessions by active branch if one is selected
+        let sessionQuery = supabase.from('sesiones_dia').select('*');
+        if (activeBranchId) {
+          sessionQuery = sessionQuery.eq('location_id', activeBranchId);
+        }
+        const { data: sessions = [] } = await sessionQuery.order('opened_at', { ascending: false });
         
         const openSession = sessions?.find(s => s.is_open) || null;
 
         let orders: Order[] = [];
         if (openSession) {
-          const { data: ordersData } = await supabase
+          let ordersQuery = supabase
             .from('pedidos')
             .select('*')
             .eq('day_session_id', openSession.id);
+
+          // Also filter orders by branch if we have one
+          if (activeBranchId) {
+            ordersQuery = ordersQuery.eq('location_id', activeBranchId);
+          }
+
+          const { data: ordersData } = await ordersQuery;
 
           if (ordersData && ordersData.length > 0) {
             // Fetch items for all orders in one query
@@ -240,6 +260,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               paymentReference: o.payment_reference,
               paidAt: o.paid_at,
               createdAt: o.created_at,
+              locationId: o.location_id,
               items: (itemsByOrder[o.id] || []).map((i: any) => ({
                 quantity: parseFloat(i.quantity),
                 product: {
@@ -267,6 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image_url: p.image_url
         })) || [];
 
+        // Don't reset orders/session when switching branches and new branch has no open session
         dispatch({
           type: 'LOAD_STATE',
           payload: {
@@ -278,7 +300,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               exchangeRate: parseFloat(s.exchange_rate),
               isOpen: s.is_open,
               openedAt: s.opened_at,
-              closedAt: s.closed_at
+              closedAt: s.closed_at,
+              locationId: s.location_id,
             })),
             currentDay: openSession ? {
               id: openSession.id,
@@ -286,6 +309,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               exchangeRate: parseFloat(openSession.exchange_rate),
               isOpen: openSession.is_open,
               openedAt: openSession.opened_at,
+              locationId: openSession.location_id,
             } : null,
             orders,
             nextTicket,
@@ -299,7 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-  }, [authInitialized]);
+  }, [authInitialized, branchesLoading, activeBranchId]);
 
   const performMutation = async (type: 'INSERT' | 'UPDATE' | 'DELETE', table: string, data: any, filterColumn: string = 'id', filterValue?: any) => {
     const fVal = filterValue ?? data.id;
@@ -388,6 +412,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       exchangeRate,
       isOpen: true,
       openedAt: new Date().toISOString(),
+      locationId: activeBranchId || undefined,
     };
     
     // Update USD prices for products priced in Bs
@@ -404,7 +429,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       date: newDay.date,
       exchange_rate: newDay.exchangeRate,
       is_open: true,
-      opened_at: newDay.openedAt
+      opened_at: newDay.openedAt,
+      location_id: activeBranchId || null,
     });
   };
 
@@ -415,8 +441,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CLOSE_DAY' });
     await performMutation('UPDATE', 'sesiones_dia', { id: sessionId, is_open: false, closed_at: closedAt });
     
-    // Refresh sessions list after closing
-    const { data: sessions } = await supabase.from('sesiones_dia').select('*').order('opened_at', { ascending: false });
+    // Refresh sessions list after closing (filtered by branch)
+    let sessionsQuery = supabase.from('sesiones_dia').select('*');
+    if (activeBranchId) {
+      sessionsQuery = sessionsQuery.eq('location_id', activeBranchId);
+    }
+    const { data: sessions } = await sessionsQuery.order('opened_at', { ascending: false });
     if (sessions) {
       dispatch({ type: 'LOAD_SESSIONS', payload: sessions.map(s => ({
         id: s.id,
@@ -424,7 +454,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         exchangeRate: parseFloat(s.exchange_rate),
         isOpen: s.is_open,
         openedAt: s.opened_at,
-        closedAt: s.closed_at
+        closedAt: s.closed_at,
+        locationId: s.location_id,
       })) });
     }
   };
@@ -469,7 +500,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       payment_method: newOrder.paymentMethod,
       payment_reference: newOrder.paymentReference,
       paid_at: newOrder.paidAt,
-      created_at: newOrder.createdAt
+      created_at: newOrder.createdAt,
+      location_id: activeBranchId || null,
     });
 
     // 2. Queue Items
@@ -567,6 +599,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       paymentReference: o.payment_reference,
       paidAt: o.paid_at,
       createdAt: o.created_at,
+      locationId: o.location_id,
       items: (itemsByOrder[o.id] || []).map((i: any) => ({
         quantity: parseFloat(i.quantity),
         product: {

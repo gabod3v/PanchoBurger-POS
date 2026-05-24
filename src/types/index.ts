@@ -33,6 +33,7 @@ export interface Order {
   paymentReference?: string;
   paidAt?: string;
   createdAt: string;
+  locationId?: string;
 }
 
 export interface DaySession {
@@ -42,6 +43,7 @@ export interface DaySession {
   isOpen: boolean;
   openedAt: string;
   closedAt?: string;
+  locationId?: string;
 }
 
 export type SyncStatus = 'online' | 'offline' | 'syncing';
@@ -104,6 +106,7 @@ export interface Location {
   tenant_id: string;
   name: string;
   address: string;
+  is_active?: boolean;
 }
 
 export interface AppState {

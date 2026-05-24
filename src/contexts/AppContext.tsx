@@ -213,7 +213,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (activeBranchId) {
           sessionQuery = sessionQuery.eq('location_id', activeBranchId);
         }
-        const { data: sessions = [] } = await sessionQuery.order('opened_at', { ascending: false });
+        let { data: sessions = [] } = await sessionQuery.order('opened_at', { ascending: false });
+
+        // Fallback: if branch filter found nothing, try legacy sessions (no location_id)
+        if (activeBranchId && sessions.length === 0) {
+          const { data: legacy } = await supabase
+            .from('sesiones_dia')
+            .select('*')
+            .is('location_id', null)
+            .order('opened_at', { ascending: false });
+          if (legacy && legacy.length > 0) {
+            sessions = legacy;
+          }
+        }
         
         const openSession = sessions?.find(s => s.is_open) || null;
 
@@ -229,7 +241,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ordersQuery = ordersQuery.eq('location_id', activeBranchId);
           }
 
-          const { data: ordersData } = await ordersQuery;
+          let { data: ordersData } = await ordersQuery;
+
+          // Fallback: if branch filter found no orders, try legacy (no location_id)
+          if (activeBranchId && (!ordersData || ordersData.length === 0)) {
+            const { data: legacyOrders } = await supabase
+              .from('pedidos')
+              .select('*')
+              .eq('day_session_id', openSession.id)
+              .is('location_id', null);
+            if (legacyOrders && legacyOrders.length > 0) {
+              ordersData = legacyOrders;
+            }
+          }
 
           if (ordersData && ordersData.length > 0) {
             // Fetch items for all orders in one query
@@ -446,7 +470,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (activeBranchId) {
       sessionsQuery = sessionsQuery.eq('location_id', activeBranchId);
     }
-    const { data: sessions } = await sessionsQuery.order('opened_at', { ascending: false });
+    let { data: sessions } = await sessionsQuery.order('opened_at', { ascending: false });
+
+    // Fallback: if branch filter found nothing, try legacy sessions (no location_id)
+    if (activeBranchId && (!sessions || sessions.length === 0)) {
+      const { data: legacy } = await supabase
+        .from('sesiones_dia')
+        .select('*')
+        .is('location_id', null)
+        .order('opened_at', { ascending: false });
+      if (legacy && legacy.length > 0) {
+        sessions = legacy;
+      }
+    }
+
     if (sessions) {
       dispatch({ type: 'LOAD_SESSIONS', payload: sessions.map(s => ({
         id: s.id,

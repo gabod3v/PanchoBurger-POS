@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BranchManager from '@/components/BranchManager';
 import TeamSection from '@/components/TeamSection';
-import { Loader2, Save, Upload, Image, Building2, Users } from 'lucide-react';
+import { Loader2, Save, Upload, Image, Building2, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -104,6 +104,7 @@ export default function ConfiguracionPage() {
   const [tenantName, setTenantName] = useState(tenant?.name || '');
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant?.logo_url || null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [primaryHex, setPrimaryHex] = useState(
     tenant?.primary_color ? hslToHex(tenant.primary_color) : hslToHex('0 0% 9%')
@@ -121,6 +122,7 @@ export default function ConfiguracionPage() {
     if (tenant) {
       setTenantName(tenant.name);
       setLogoPreview(tenant.logo_url || null);
+      setRemoveLogo(false);
       if (tenant.primary_color) setPrimaryHex(hslToHex(tenant.primary_color));
       if (tenant.accent_color) setAccentHex(hslToHex(tenant.accent_color));
       if (tenant.sidebar_color) setSidebarHex(hslToHex(tenant.sidebar_color));
@@ -176,6 +178,8 @@ export default function ConfiguracionPage() {
       // Upload new logo if selected
       if (logoFile) {
         logoUrl = await uploadLogo(tenant.id, logoFile);
+      } else if (removeLogo) {
+        logoUrl = null;
       }
 
       const primaryColor = hexToHsl(primaryHex);
@@ -242,8 +246,14 @@ export default function ConfiguracionPage() {
               <div className="space-y-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                   <Upload size={14} className="mr-1" />
-                  {logoPreview ? 'Cambiar logo' : 'Subir logo'}
+                  {logoPreview && !removeLogo ? 'Cambiar logo' : 'Subir logo'}
                 </Button>
+                {logoPreview && !removeLogo && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setRemoveLogo(true); setLogoFile(null); setLogoPreview(null); }}>
+                    <X size={14} className="mr-1" />
+                    Quitar logo
+                  </Button>
+                )}
                 <p className="text-[0.65rem] text-muted-foreground">PNG, JPG o WebP. Máximo 2MB.</p>
                 <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleLogoSelect} />
               </div>

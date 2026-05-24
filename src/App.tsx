@@ -116,9 +116,9 @@ const App = () => (
                       <Route path="/pedidos" element={<OrdersPage />} />
                       <Route path="/resumen" element={<DaySummary />} />
                       <Route path="/resumen/:id" element={<DaySummary />} />
-                      <Route path="/categorias" element={<CategoriesPage />} />
+                      <Route path="/categorias" element={<Navigate to="/menu" replace />} />
                       <Route path="/historial" element={<HistoryPage />} />
-                      <Route path="/pendientes" element={<PendingPayments />} />
+                      <Route path="/pendientes" element={<Navigate to="/pedidos" replace />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Layout>

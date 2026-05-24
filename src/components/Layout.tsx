@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, User, LogOut, Settings, MapPin } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, History, CreditCard, Shield, User, LogOut, Settings, MapPin } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranches } from '@/contexts/BranchContext';
@@ -11,11 +11,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/menu', icon: UtensilsCrossed, label: 'Menú' },
-  { to: '/categorias', icon: Tags, label: 'Categorías' },
   { to: '/historial', icon: History, label: 'Historial' },
-  { to: '/pendientes', icon: Clock, label: 'Pendientes' },
   { to: '/caja', icon: Wallet, label: 'Caja' },
-  { to: '/nuevo-pedido', icon: PlusCircle, label: 'Nuevo Pedido' },
   { to: '/pedidos', icon: ClipboardList, label: 'Pedidos' },
   { to: '/resumen', icon: BarChart3, label: 'Resumen' },
 ];

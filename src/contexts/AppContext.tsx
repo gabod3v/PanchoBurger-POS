@@ -130,7 +130,7 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { tenant } = useAuth();
+  const { tenant, initialized: authInitialized } = useAuth();
   const tenantId = tenant?.id;
 
   // Persistence: Save state on every change
@@ -186,6 +186,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.syncStatus, state.pendingActions]);
 
   useEffect(() => {
+    if (!authInitialized) return; // Esperar a que AuthContext cargue la sesión
+
+    if (!supabase) {
+      console.warn('App: Supabase no configurado, usando datos locales');
+      return;
+    }
+
     const loadData = async () => {
       try {
         const { data: products } = await supabase.from('productos').select('*');
@@ -273,7 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-  }, []);
+  }, [authInitialized]);
 
   const performMutation = async (type: 'INSERT' | 'UPDATE' | 'DELETE', table: string, data: any, filterColumn: string = 'id', filterValue?: any) => {
     const fVal = filterValue ?? data.id;

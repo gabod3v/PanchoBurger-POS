@@ -250,8 +250,8 @@ export default function OrdersPage() {
             <Button variant="outline" size="sm" className="border-amber-200/60 hover:bg-amber-100/50" onClick={() => navigate(`/nuevo-pedido?edit=${o.id}`)}>
               <Pencil size={14} /> Editar
             </Button>
-            <Button variant="ghost" size="sm" className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 ml-auto" onClick={() => handleDelete(o.id)} title="Eliminar">
-              <Trash2 size={14} />
+            <Button variant="outline" size="sm" className="border-red-200/60 text-red-600 hover:bg-red-50 ml-auto" onClick={() => handleDelete(o.id)}>
+              <Trash2 size={14} /> Eliminar
             </Button>
           </div>
           {next && (

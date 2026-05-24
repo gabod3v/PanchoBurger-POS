@@ -12,6 +12,8 @@ import PrintTicket from '@/components/PrintTicket';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: 'Pendiente',
@@ -40,6 +42,7 @@ function getCardBg(status: OrderStatus): string {
 
 export default function OrdersPage() {
   const { state, updateOrderStatus, deleteOrder, registerPayment, fetchOrdersBySession } = useApp();
+  const { tenant } = useAuth();
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [currentTab, setCurrentTab] = useState('active');
   const navigate = useNavigate();
@@ -59,15 +62,21 @@ export default function OrdersPage() {
     }
   };
 
-  const formatOrderAsText = (o: Order): string => {
+  const formatOrderAsText = (o: Order, pagoInfo?: { bank_name: string; phone: string; rif: string; beneficiary_name: string }): string => {
     const date = new Date(o.createdAt).toLocaleString('es-VE');
     const items = o.items.map(i =>
       `  ${i.quantity}× ${i.product.name}  $${(i.product.price * i.quantity).toFixed(2)}`
     ).join('\n');
 
-    const paidLine = o.paymentStatus === 'paid'
+    const footer = o.paymentStatus === 'paid'
       ? `\n✅ Pagado` + (o.paymentMethod ? ` — ${paymentMethodLabels[o.paymentMethod]?.label || o.paymentMethod}` : '')
-      : '';
+      : pagoInfo
+        ? `\n\n📲 *DATOS PARA PAGO*` +
+          `\nBanco: ${pagoInfo.bank_name}` +
+          `\nTitular: ${pagoInfo.beneficiary_name}` +
+          `\nRIF: ${pagoInfo.rif}` +
+          `\nTeléfono: ${pagoInfo.phone}`
+        : '';
 
     return (
       `🧾 *PEDIDO #${o.ticketNumber}*\n` +
@@ -76,12 +85,25 @@ export default function OrdersPage() {
       `\n${items}\n` +
       `\n─────────────────\n` +
       `*Total: $${o.totalUSD.toFixed(2)}*  (Bs ${o.totalLocal.toFixed(2)})` +
-      paidLine
+      footer
     );
   };
 
   const handleShare = async (o: Order) => {
-    const text = formatOrderAsText(o);
+    // Fetch company payment info for unpaid orders
+    let pagoInfo: { bank_name: string; phone: string; rif: string; beneficiary_name: string } | undefined;
+    if (o.paymentStatus !== 'paid') {
+      const { data } = await supabase!
+        .from('configuracion_pago')
+        .select('bank_name, phone, rif, beneficiary_name')
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        pagoInfo = data;
+      }
+    }
+
+    const text = formatOrderAsText(o, pagoInfo);
     if (navigator.share) {
       try {
         await navigator.share({ title: `Pedido #${o.ticketNumber}`, text });

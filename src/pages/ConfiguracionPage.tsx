@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Save, Upload, Image } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BranchManager from '@/components/BranchManager';
+import TeamSection from '@/components/TeamSection';
+import { Loader2, Save, Upload, Image, Building2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -213,13 +216,8 @@ export default function ConfiguracionPage() {
     padding: 0,
   });
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display tracking-tight">Configuración</h1>
-        <p className="text-muted-foreground mt-1">Personaliza la imagen de tu restaurante</p>
-      </div>
-
+  const brandingContent = (
+    <div className="space-y-6">
       {/* Tenant Info */}
       <Card className="border-border/50">
         <CardHeader>
@@ -227,18 +225,10 @@ export default function ConfiguracionPage() {
           <CardDescription>Nombre y logo de tu negocio</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Tenant name */}
           <div className="space-y-2">
             <Label htmlFor="tenantName">Nombre del restaurante</Label>
-            <Input
-              id="tenantName"
-              value={tenantName}
-              onChange={e => setTenantName(e.target.value)}
-              placeholder="Mi Restaurante"
-            />
+            <Input id="tenantName" value={tenantName} onChange={e => setTenantName(e.target.value)} placeholder="Mi Restaurante" />
           </div>
-
-          {/* Logo upload */}
           <div className="space-y-2">
             <Label>Logo</Label>
             <div className="flex items-center gap-4">
@@ -250,25 +240,12 @@ export default function ConfiguracionPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                   <Upload size={14} className="mr-1" />
                   {logoPreview ? 'Cambiar logo' : 'Subir logo'}
                 </Button>
-                <p className="text-[0.65rem] text-muted-foreground">
-                  PNG, JPG o WebP. Máximo 2MB.
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={handleLogoSelect}
-                />
+                <p className="text-[0.65rem] text-muted-foreground">PNG, JPG o WebP. Máximo 2MB.</p>
+                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleLogoSelect} />
               </div>
             </div>
           </div>
@@ -282,97 +259,97 @@ export default function ConfiguracionPage() {
           <CardDescription>Personaliza los colores de tu interfaz</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Primary Color */}
           <div className="space-y-3">
             <Label>Color primario</Label>
             <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={primaryHex}
-                onChange={e => setPrimaryHex(e.target.value)}
-                style={hexInputStyle(primaryHex)}
-              />
+              <input type="color" value={primaryHex} onChange={e => setPrimaryHex(e.target.value)} style={hexInputStyle(primaryHex)} />
               <span className="text-sm text-muted-foreground font-mono">{primaryHex}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {COLOR_PRESETS.map(p => (
-                <button
-                  key={p.hsl}
-                  type="button"
-                  title={p.label}
-                  onClick={() => setPrimaryHex(hslToHex(p.hsl))}
+                <button key={p.hsl} type="button" title={p.label} onClick={() => setPrimaryHex(hslToHex(p.hsl))}
                   className="w-7 h-7 rounded-md border border-border/50 hover:scale-110 transition-transform"
-                  style={{ background: hslToHex(p.hsl) }}
-                />
+                  style={{ background: hslToHex(p.hsl) }} />
               ))}
             </div>
           </div>
-
           <Separator />
-
-          {/* Accent Color */}
           <div className="space-y-3">
             <Label>Color de acento</Label>
             <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={accentHex}
-                onChange={e => setAccentHex(e.target.value)}
-                style={hexInputStyle(accentHex)}
-              />
+              <input type="color" value={accentHex} onChange={e => setAccentHex(e.target.value)} style={hexInputStyle(accentHex)} />
               <span className="text-sm text-muted-foreground font-mono">{accentHex}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {COLOR_PRESETS.map(p => (
-                <button
-                  key={p.hsl}
-                  type="button"
-                  title={p.label}
-                  onClick={() => setAccentHex(hslToHex(p.hsl))}
+                <button key={p.hsl} type="button" title={p.label} onClick={() => setAccentHex(hslToHex(p.hsl))}
                   className="w-7 h-7 rounded-md border border-border/50 hover:scale-110 transition-transform"
-                  style={{ background: hslToHex(p.hsl) }}
-                />
+                  style={{ background: hslToHex(p.hsl) }} />
               ))}
             </div>
           </div>
-
           <Separator />
-
-          {/* Sidebar/Background Color */}
           <div className="space-y-3">
             <Label>Color de la barra lateral</Label>
             <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={sidebarHex}
-                onChange={e => setSidebarHex(e.target.value)}
-                style={hexInputStyle(sidebarHex)}
-              />
+              <input type="color" value={sidebarHex} onChange={e => setSidebarHex(e.target.value)} style={hexInputStyle(sidebarHex)} />
               <span className="text-sm text-muted-foreground font-mono">{sidebarHex}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {COLOR_PRESETS.map(p => (
-                <button
-                  key={p.hsl}
-                  type="button"
-                  title={p.label}
-                  onClick={() => setSidebarHex(hslToHex(p.hsl))}
+                <button key={p.hsl} type="button" title={p.label} onClick={() => setSidebarHex(hslToHex(p.hsl))}
                   className="w-7 h-7 rounded-md border border-border/50 hover:scale-110 transition-transform"
-                  style={{ background: hslToHex(p.hsl) }}
-                />
+                  style={{ background: hslToHex(p.hsl) }} />
               ))}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Save */}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving || !tenantName.trim()} size="lg">
           {saving ? <Loader2 className="animate-spin mr-2" size={16} /> : <Save size={16} className="mr-2" />}
           Guardar cambios
         </Button>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold font-display tracking-tight">Configuración</h1>
+        <p className="text-muted-foreground mt-1">Personaliza tu restaurante, gestioná sucursales y equipo</p>
+      </div>
+
+      <Tabs defaultValue="branding" className="w-full">
+        <TabsList className="w-full justify-start bg-muted/50 p-1 rounded-lg border border-border/50 mb-6">
+          <TabsTrigger value="branding" className="text-sm gap-2 data-[state=active]:bg-background">
+            <Image size={16} />
+            Marca
+          </TabsTrigger>
+          <TabsTrigger value="branches" className="text-sm gap-2 data-[state=active]:bg-background">
+            <Building2 size={16} />
+            Sucursales
+          </TabsTrigger>
+          <TabsTrigger value="team" className="text-sm gap-2 data-[state=active]:bg-background">
+            <Users size={16} />
+            Equipo
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="branding" className="mt-0">
+          {brandingContent}
+        </TabsContent>
+
+        <TabsContent value="branches" className="mt-0">
+          <BranchManager />
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-0">
+          <TeamSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +15,6 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import SuscripcionPage from "./pages/SuscripcionPage";
 import AdminPage from "./pages/AdminPage";
-import TeamManagementPage from "./pages/TeamManagementPage";
 import ProfilePage from "./pages/ProfilePage";
 import OrgSetupWizard from "./pages/OrgSetupWizard";
 import Index from "./pages/Index";
@@ -75,14 +74,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
 
-              {/* Team management */}
-              <Route path="/equipo" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <TeamManagementPage />
-                  </Layout>
-                </ProtectedRoute>
-              } />
+              {/* Team management — redirect to Configuración */}
+              <Route path="/equipo" element={<Navigate to="/configuracion" replace />} />
 
               {/* Profile */}
               <Route path="/perfil" element={

@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut, Settings, MapPin } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, User, LogOut, Settings, MapPin } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranches } from '@/contexts/BranchContext';
@@ -169,21 +169,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               {!collapsed && <span className="flex-1">Admin</span>}
             </Link>
           )}
-
-          {/* Team */}
-          <Link
-            to="/equipo"
-            title={collapsed ? 'Equipo' : undefined}
-            onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
-              pathname === '/equipo'
-                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
-                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-            }`}
-          >
-            <Users size={20} />
-            {!collapsed && <span className="flex-1">Equipo</span>}
-          </Link>
 
           {/* Configuración (owner/manager only) */}
           {hasRole('owner', 'manager') && (

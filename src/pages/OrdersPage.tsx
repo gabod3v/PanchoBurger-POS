@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
-import { ClipboardList, Printer, Trash2, Pencil, Clock, Banknote, CreditCard, Smartphone, Coins, AlertCircle, ChevronRight, Plus, CheckCircle } from 'lucide-react';
+import { ClipboardList, Printer, Trash2, Pencil, Clock, Banknote, CreditCard, Smartphone, Coins, AlertCircle, ChevronRight, Plus, CheckCircle, Share2 } from 'lucide-react';
 import { OrderStatus, Order, PaymentMethod } from '@/types';
 import { formatQty, formatUnitPrice } from '@/lib/format';
 import PrintTicket from '@/components/PrintTicket';
@@ -56,6 +56,36 @@ export default function OrdersPage() {
     if (confirm('¿Estás seguro de eliminar este pedido?')) {
       deleteOrder(id);
       toast.success('Pedido eliminado');
+    }
+  };
+
+  const formatOrderAsText = (o: Order): string => {
+    const date = new Date(o.createdAt).toLocaleString('es-VE');
+    const items = o.items.map(i =>
+      `  ${i.quantity}× ${i.product.name}  $${(i.product.price * i.quantity).toFixed(2)}`
+    ).join('\n');
+    return (
+      `🧾 *PEDIDO #${o.ticketNumber}*\n` +
+      `Cliente: ${o.customerName}\n` +
+      `Fecha: ${date}\n` +
+      `\n${items}\n` +
+      `\n─────────────────\n` +
+      `*Total: $${o.totalUSD.toFixed(2)}*  (Bs ${o.totalLocal.toFixed(2)})` +
+      (o.paymentStatus === 'paid' && o.paymentMethod
+        ? `\nPagado: ${o.paymentMethod}`
+        : '\nPendiente de pago')
+    );
+  };
+
+  const handleShare = async (o: Order) => {
+    const text = formatOrderAsText(o);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Pedido #${o.ticketNumber}`, text });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast.success('Ticket copiado al portapapeles');
     }
   };
 
@@ -188,6 +218,9 @@ export default function OrdersPage() {
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-dashed border-amber-300/50">
             <Button variant="outline" size="sm" className="border-amber-200/60 hover:bg-amber-100/50" onClick={() => setPrintingOrder(o)}>
               <Printer size={14} /> Imprimir
+            </Button>
+            <Button variant="outline" size="sm" className="border-amber-200/60 hover:bg-amber-100/50" onClick={() => handleShare(o)}>
+              <Share2 size={14} /> Compartir
             </Button>
             <Button variant="outline" size="sm" className="border-amber-200/60 hover:bg-amber-100/50" onClick={() => navigate(`/nuevo-pedido?edit=${o.id}`)}>
               <Pencil size={14} /> Editar

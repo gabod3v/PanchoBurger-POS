@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, PlusCircle, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, Tags, History, Clock, CreditCard, Shield, Users, User, LogOut, Settings } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             {!collapsed && (
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || 'Usuario'}</p>
-                <p className="text-[0.65rem] text-sidebar-foreground/50 truncate">{userTenant?.name || ''}</p>
+                <p className="text-[0.65rem] text-sidebar-foreground/50 truncate flex items-center gap-1">
+                  <img src={userTenant?.logo_url || '/default-logo.svg'} alt="Logo" className="w-3.5 h-3.5 rounded object-cover inline-block" />
+                  {userTenant?.name || 'PedidoClaro'}
+                </p>
               </div>
             )}
           </Link>
@@ -135,6 +138,23 @@ export default function Layout({ children }: { children: ReactNode }) {
             {!collapsed && <span className="flex-1">Equipo</span>}
           </Link>
 
+          {/* Configuración (owner/manager only) */}
+          {hasRole('owner', 'manager') && (
+          <Link
+            to="/configuracion"
+            title={collapsed ? 'Configuración' : undefined}
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 py-3 rounded-md text-sm font-medium transition-all duration-300 relative ${collapsed ? 'justify-center px-0' : 'px-4'} ${
+              pathname === '/configuracion'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            }`}
+          >
+            <Settings size={20} />
+            {!collapsed && <span className="flex-1">Configuración</span>}
+          </Link>
+          )}
+
           {/* Profile */}
           <Link
             to="/perfil"
@@ -202,8 +222,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               </SheetContent>
             </Sheet>
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-              <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight">{userTenant?.name || 'Pancho Burger'}</span>
+              <img src={userTenant?.logo_url || '/default-logo.svg'} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+              <span className="font-bold font-display text-[1.1rem] uppercase tracking-tight">{userTenant?.name || 'PedidoClaro'}</span>
             </div>
           </div>
         </header>

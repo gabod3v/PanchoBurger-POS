@@ -2,12 +2,15 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
+import type { UserRole } from '@/types';
+
 interface Props {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  allowedRoles?: UserRole[];
 }
 
-export default function ProtectedRoute({ children, requireAdmin }: Props) {
+export default function ProtectedRoute({ children, requireAdmin, allowedRoles }: Props) {
   const { user, loading, initialized, hasRole } = useAuth();
 
   if (loading && !initialized) {
@@ -26,6 +29,10 @@ export default function ProtectedRoute({ children, requireAdmin }: Props) {
   }
 
   if (requireAdmin && !hasRole('super_admin')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (allowedRoles && !hasRole(...allowedRoles)) {
     return <Navigate to="/dashboard" replace />;
   }
 

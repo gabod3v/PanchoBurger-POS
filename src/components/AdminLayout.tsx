@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <header className="h-14 border-b border-border bg-card flex items-center px-4 md:px-6 shrink-0">
         <div className="flex items-center gap-3">
           <Shield size={20} className="text-primary" />
-          <span className="font-bold font-display text-sm uppercase tracking-tight">Pancho Burger — Admin</span>
+          <span className="font-bold font-display text-sm uppercase tracking-tight">PedidoClaro — Admin</span>
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-3">

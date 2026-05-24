@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Profile, Tenant, Subscription, UserRole } from '@/types';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { applyBranding, resetBranding } from '@/lib/branding';
 
 interface AuthState {
   user: User | null;
@@ -19,6 +20,7 @@ interface AuthContextType extends AuthState {
   signUp: (email: string, password: string, fullName: string, tenantName: string, metadata?: Record<string, string>) => Promise<{ error: AuthError | null; user: User | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
   hasRole: (...roles: UserRole[]) => boolean;
 }
 
@@ -38,6 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load session on mount
   useEffect(() => {
+    if (!supabase) {
+      console.warn('Auth: Supabase no configurado, skipping auth init');
+      setState(prev => ({ ...prev, loading: false, initialized: true }));
+      return;
+    }
+
     let cancelled = false;
 
     console.log('Auth: getSession...');
@@ -136,6 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading: false,
         initialized: true,
       });
+
+      // Apply tenant branding colors
+      applyBranding(tenant as unknown as Tenant);
       console.log('Auth: initialized complete');
     } catch (e) {
       console.warn('Error loading user data:', e);
@@ -152,12 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) return { error: new Error('Supabase no está configurado') as unknown as AuthError };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error) toast.success('Sesión iniciada correctamente');
     return { error };
   };
 
   const signUp = async (email: string, password: string, fullName: string, tenantName: string, metadata?: Record<string, string>) => {
+    if (!supabase) return { error: new Error('Supabase no está configurado') as unknown as AuthError, user: null };
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -178,15 +191,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
+    resetBranding();
     toast.success('Sesión cerrada');
   };
 
   const refreshProfile = async () => {
-    if (!state.user) return;
+    if (!supabase || !state.user) return;
     // Reset loading ref so refresh actually runs
     loadingRef.current = false;
     await loadUserData(state.user, state.session);
+  };
+
+  const refreshTenant = async () => {
+    if (!supabase || !state.user || !state.profile) return;
+    const { data: tenantData } = await supabase
+      .from('inquilinos')
+      .select('*')
+      .eq('id', state.profile.tenant_id)
+      .maybeSingle();
+    if (tenantData) {
+      setState(prev => ({ ...prev, tenant: tenantData as unknown as Tenant }));
+      applyBranding(tenantData as unknown as Tenant);
+    }
   };
 
   const hasRole = (...roles: UserRole[]) => {
@@ -201,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       refreshProfile,
+      refreshTenant,
       hasRole,
     }}>
       {children}

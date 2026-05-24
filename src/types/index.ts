@@ -81,6 +81,9 @@ export interface Tenant {
   name: string;
   slug: string;
   logo_url?: string;
+  primary_color?: string | null;
+  accent_color?: string | null;
+  sidebar_color?: string | null;
   owner_id: string;
   created_at: string;
   updated_at: string;

@@ -146,4 +146,114 @@ describe('AuthContext - signUp metadata', () => {
       },
     });
   });
+
+  describe('AuthContext - branding integration', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('calls applyBranding with tenant data after loadUserData', async () => {
+      // Mock a session to trigger loadUserData
+      const mockSession = {
+        user: { id: 'user-1', email: 'test@test.com' },
+      };
+
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      // Mock the perfiles query to return a profile
+      const mockPerfilesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'user-1',
+            tenant_id: 'tenant-1',
+            full_name: 'Test User',
+            role: 'owner',
+            is_active: true,
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      // Mock the inquilinos query to return a tenant with branding fields
+      const mockInquilinosQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tenant-1',
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            logo_url: 'https://example.com/logo.png',
+            primary_color: '0 72% 51%',
+            accent_color: '217 91% 60%',
+            sidebar_color: '0 0% 98%',
+            owner_id: 'user-1',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+          error: null,
+        }),
+      };
+
+      // Mock suscripciones query
+      const mockSuscripcionesQuery = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+      };
+
+      // Chain .from() calls
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'perfiles') return mockPerfilesQuery as any;
+        if (table === 'inquilinos') return mockInquilinosQuery as any;
+        if (table === 'suscripciones') return mockSuscripcionesQuery as any;
+        return {} as any;
+      });
+
+      const { useAuth, AuthProvider } = await import('./AuthContext');
+
+      let authState: any = null;
+      function TestConsumer() {
+        const ctx = useAuth();
+        // Store state for assertions
+        if (ctx.initialized && !authState) {
+          authState = { tenant: ctx.tenant, initialized: ctx.initialized };
+        }
+        return null;
+      }
+
+      const { render } = await import('@testing-library/react');
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>
+      );
+
+      // Wait for the auth to initialize
+      await vi.waitFor(() => {
+        expect(authState?.initialized).toBe(true);
+      });
+
+      // The tenant should include all the branding fields
+      expect(authState?.tenant?.primary_color).toBe('0 72% 51%');
+      expect(authState?.tenant?.accent_color).toBe('217 91% 60%');
+      expect(authState?.tenant?.sidebar_color).toBe('0 0% 98%');
+
+      // Verify the CSS vars were set by applyBranding
+      const root = document.documentElement;
+      expect(root.style.getPropertyValue('--primary')).toBe('0 72% 51%');
+      expect(root.style.getPropertyValue('--accent')).toBe('217 91% 60%');
+      expect(root.style.getPropertyValue('--sidebar-background')).toBe('0 0% 98%');
+    });
+  });
 });

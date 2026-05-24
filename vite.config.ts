@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["logo.png", "logo.svg", "favicon.svg", "robots.txt"],
+      includeAssets: ["logo.svg", "favicon.svg", "robots.txt"],
       manifest: {
         name: "PedidoClaro — POS para restaurantes",
         short_name: "PedidoClaro",
@@ -31,19 +31,19 @@ export default defineConfig(({ mode }) => ({
             type: "image/svg+xml",
           },
           {
-            src: "logo.png",
+            src: "default-logo.svg",
             sizes: "192x192",
-            type: "image/png",
+            type: "image/svg+xml",
           },
           {
-            src: "logo.png",
+            src: "default-logo.svg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/svg+xml",
           },
           {
-            src: "logo.png",
+            src: "default-logo.svg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/svg+xml",
             purpose: "any maskable",
           },
         ],

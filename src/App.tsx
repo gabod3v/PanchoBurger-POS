@@ -29,6 +29,7 @@ import KitchenDisplay from "./pages/KitchenDisplay";
 import CategoriesPage from "./pages/CategoriesPage";
 import HistoryPage from "./pages/HistoryPage";
 import PendingPayments from "./pages/PendingPayments";
+import ConfiguracionPage from "./pages/ConfiguracionPage";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,11 @@ const App = () => (
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout><Index /></Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/configuracion" element={
+                <ProtectedRoute allowedRoles={['owner', 'manager', 'super_admin']}>
+                  <Layout><ConfiguracionPage /></Layout>
                 </ProtectedRoute>
               } />
               <Route path="*" element={

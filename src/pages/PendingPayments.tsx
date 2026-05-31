@@ -1,28 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, CheckCircle } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
-import { Order, PaymentMethod } from '@/types';
-import { toast } from 'sonner';
-
+import { OrderDetailModal } from '@/components/OrderDetailModal';
+import { Order } from '@/types';
 export default function PendingPayments() {
-  const { state, registerPayment, fetchOrdersBySession } = useApp();
+  const { state, fetchOrdersBySession } = useApp();
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo_bs');
-  const [paymentReference, setPaymentReference] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     loadPendingOrders();
@@ -47,29 +33,6 @@ export default function PendingPayments() {
       console.error('Error loading pending orders:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePayOrder = async () => {
-    if (!selectedOrder) return;
-    if (paymentMethod === 'pagomovil' && !paymentReference) {
-      toast.error('Ingresa la referencia del pagomóvil');
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      registerPayment(selectedOrder.id, paymentMethod, paymentReference);
-      
-      toast.success(`Pedido #${selectedOrder.ticketNumber} marcado como pagado`);
-      setSelectedOrder(null);
-      setPaymentReference('');
-      loadPendingOrders();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      toast.error('Error al procesar el pago');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -139,55 +102,15 @@ export default function PendingPayments() {
         </ScrollArea>
       )}
 
-      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Pagar Pedido #{selectedOrder?.ticketNumber}</DialogTitle>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <>
-              <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-muted-foreground">Cliente</p>
-                <p className="font-semibold">{selectedOrder.customerName}</p>
-                <p className="text-2xl font-bold text-warning mt-2">${selectedOrder.totalUSD.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">{selectedOrder.totalLocal.toFixed(2)} Bs</p>
-              </div>
-
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">
-                  Método de Pago
-                </label>
-                <PaymentMethodSelector value={paymentMethod} onChange={setPaymentMethod} />
-              </div>
-
-              {paymentMethod === 'pagomovil' && (
-                <div className="mb-4">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
-                    Referencia (últimos 4 dígitos)
-                  </label>
-                  <Input
-                    placeholder="Ej: 1234"
-                    value={paymentReference}
-                    onChange={e => setPaymentReference(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    maxLength={4}
-                    className="w-32"
-                  />
-                </div>
-              )}
-
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handlePayOrder}
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'Procesando...' : 'Confirmar Pago'}
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <OrderDetailModal
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onOpenChange={(open) => !open && setSelectedOrder(null)}
+        onPaymentComplete={() => {
+          setSelectedOrder(null);
+          loadPendingOrders();
+        }}
+      />
     </div>
   );
 }

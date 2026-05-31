@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
+import { OrderDetailModal } from '@/components/OrderDetailModal';
 import { ClipboardList, Printer, Trash2, Pencil, Clock, Banknote, CreditCard, Smartphone, Coins, AlertCircle, ChevronRight, Plus, CheckCircle, Share2 } from 'lucide-react';
 import { OrderStatus, Order, PaymentMethod } from '@/types';
 import { formatQty, formatUnitPrice } from '@/lib/format';
@@ -40,7 +38,7 @@ function getCardBg(status: OrderStatus): string {
 }
 
 export default function OrdersPage() {
-  const { state, updateOrderStatus, deleteOrder, registerPayment, fetchOrdersBySession } = useApp();
+  const { state, updateOrderStatus, deleteOrder, fetchOrdersBySession } = useApp();
   const { tenant } = useAuth();
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [currentTab, setCurrentTab] = useState('active');
@@ -50,9 +48,6 @@ export default function OrdersPage() {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [loadingPending, setLoadingPending] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [payMethod, setPayMethod] = useState<PaymentMethod>('efectivo_bs');
-  const [payRef, setPayRef] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleDelete = (id: string) => {
     if (confirm('¿Estás seguro de eliminar este pedido?')) {
@@ -155,27 +150,6 @@ export default function OrdersPage() {
       console.error('Error loading pending orders:', error);
     } finally {
       setLoadingPending(false);
-    }
-  };
-
-  const handlePayOrder = async () => {
-    if (!selectedOrder) return;
-    if (payMethod === 'pagomovil' && !payRef) {
-      toast.error('Ingresa la referencia del pagomóvil');
-      return;
-    }
-    setIsProcessing(true);
-    try {
-      registerPayment(selectedOrder.id, payMethod, payRef);
-      toast.success(`Pedido #${selectedOrder.ticketNumber} marcado como pagado`);
-      setSelectedOrder(null);
-      setPayRef('');
-      loadPendingOrders();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      toast.error('Error al procesar el pago');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -333,7 +307,7 @@ export default function OrdersPage() {
               <div className="space-y-3">
                 {pendingOrders.map(order => (
                   <div key={order.id} className="pos-card flex items-center justify-between p-4 cursor-pointer hover:ring-1 hover:ring-warning/50"
-                    onClick={() => { setSelectedOrder(order); setPayMethod('efectivo_bs'); setPayRef(''); }}>
+                    onClick={() => setSelectedOrder(order)}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
                         <Clock className="text-warning" size={24} />
@@ -356,36 +330,15 @@ export default function OrdersPage() {
             </>
           )}
 
-          <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Pagar Pedido #{selectedOrder?.ticketNumber}</DialogTitle>
-              </DialogHeader>
-              {selectedOrder && (
-                <>
-                  <div className="bg-muted/50 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-muted-foreground">Cliente</p>
-                    <p className="font-semibold">{selectedOrder.customerName}</p>
-                    <p className="text-2xl font-bold text-warning mt-2">${selectedOrder.totalUSD.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">{selectedOrder.totalLocal.toFixed(2)} Bs</p>
-                  </div>
-                  <div className="mb-4">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Método de Pago</label>
-                    <PaymentMethodSelector value={payMethod} onChange={setPayMethod} />
-                  </div>
-                  {payMethod === 'pagomovil' && (
-                    <div className="mb-4">
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Referencia (últimos 4 dígitos)</label>
-                      <Input placeholder="Ej: 1234" value={payRef} onChange={e => setPayRef(e.target.value.replace(/\D/g, '').slice(0, 4))} maxLength={4} className="w-32" />
-                    </div>
-                  )}
-                  <Button className="w-full" size="lg" onClick={handlePayOrder} disabled={isProcessing}>
-                    {isProcessing ? 'Procesando...' : 'Confirmar Pago'}
-                  </Button>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+          <OrderDetailModal
+            order={selectedOrder}
+            open={!!selectedOrder}
+            onOpenChange={(open) => !open && setSelectedOrder(null)}
+            onPaymentComplete={() => {
+              setSelectedOrder(null);
+              loadPendingOrders();
+            }}
+          />
         </TabsContent>
       </Tabs>
 

@@ -48,7 +48,10 @@ type Action =
   | { type: 'SET_SYNC_STATUS'; payload: SyncStatus }
   | { type: 'QUEUE_ACTION'; payload: PendingAction }
   | { type: 'CLEAR_PENDING'; payload: string }
-  | { type: 'DELETE_ORDER'; payload: string };
+  | { type: 'DELETE_ORDER'; payload: string }
+  | { type: 'REVALUE_PENDING_ORDERS'; payload: { rate: number } };
+
+export type { Action };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -104,10 +107,24 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, pendingActions: state.pendingActions.filter(a => a.id !== action.payload) };
     case 'DELETE_ORDER':
       return { ...state, orders: state.orders.filter(o => o.id !== action.payload) };
+    case 'REVALUE_PENDING_ORDERS': {
+      const { rate } = action.payload;
+      return {
+        ...state,
+        orders: state.orders.map(o =>
+          o.paymentStatus === 'pending'
+            ? { ...o, totalLocal: Math.round(o.totalUSD * rate * 100) / 100 }
+            : o
+        )
+      };
+    }
     default:
       return state;
   }
 }
+
+// Exported for testing
+export { reducer };
 
 interface AppContextType {
   state: AppState;
@@ -456,6 +473,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
       opened_at: newDay.openedAt,
       location_id: activeBranchId || null,
     });
+
+    // Revalue pending orders from previous days with the new exchange rate
+    if (tenantId) {
+      let pendingQuery = supabase
+        .from('pedidos')
+        .select('id, total_usd')
+        .eq('payment_status', 'pending')
+        .eq('tenant_id', tenantId);
+
+      if (activeBranchId) {
+        pendingQuery = pendingQuery.eq('location_id', activeBranchId);
+      }
+
+      const { data: pendingOrders } = await pendingQuery;
+
+      if (pendingOrders && pendingOrders.length > 0) {
+        for (const po of pendingOrders) {
+          const newTotalLocal = Math.round(Number(po.total_usd) * exchangeRate * 100) / 100;
+          await performMutation('UPDATE', 'pedidos', {
+            id: po.id,
+            total_local: newTotalLocal,
+          });
+        }
+
+        // Update local state — maps over pending orders (already in state)
+        dispatch({ type: 'REVALUE_PENDING_ORDERS', payload: { rate: exchangeRate } });
+      }
+    }
   };
 
   const closeDay = async () => {

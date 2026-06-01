@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Wallet, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, History, CreditCard, Shield, User, LogOut, Settings, MapPin } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Wallet, ClipboardList, BarChart3, Menu, ChevronLeft, ChevronRight, Wifi, WifiOff, RefreshCw, History, CreditCard, Shield, User, LogOut, Settings, MapPin, Clock } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBranches } from '@/contexts/BranchContext';
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/menu', icon: UtensilsCrossed, label: 'Menú' },
   { to: '/historial', icon: History, label: 'Historial' },
+  { to: '/pendientes', icon: Clock, label: 'Pendientes' },
   { to: '/caja', icon: Wallet, label: 'Caja' },
   { to: '/pedidos', icon: ClipboardList, label: 'Pedidos' },
   { to: '/resumen', icon: BarChart3, label: 'Resumen' },

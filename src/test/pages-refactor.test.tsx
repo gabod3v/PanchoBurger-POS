@@ -555,6 +555,206 @@ describe('PendingPayments page', () => {
 
     expect(screen.getByText('No hay pedidos pendientes')).toBeInTheDocument();
   });
+
+  it('groups orders by session with date headers and rates', async () => {
+    const session1: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: false, openedAt: '2024-05-26T08:00:00Z',
+    };
+    const session2: DaySession = {
+      id: 's2', date: '2024-05-25', exchangeRate: 38,
+      isOpen: false, openedAt: '2024-05-25T08:00:00Z',
+    };
+    const order1: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 400,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+    const order2: Order = {
+      id: 'o2', ticketNumber: 11, customerName: 'Maria',
+      items: [{ product: mockProduct, quantity: 2 }],
+      totalUSD: 20, totalLocal: 760,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-25T12:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session1, session2], currentDay: null });
+    mockApp.fetchOrdersBySession = vi.fn()
+      .mockResolvedValueOnce([order1])
+      .mockResolvedValueOnce([order2]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText('Ticket #10')).toBeInTheDocument();
+    expect(screen.getByText('Ticket #11')).toBeInTheDocument();
+    const tasaElements = screen.getAllByText(/Tasa/);
+    expect(tasaElements).toHaveLength(2);
+  });
+
+  it('shows total Bs alongside USD total', async () => {
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: true, openedAt: '2024-05-26T08:00:00Z',
+    };
+    const order1: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 400,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+    const order2: Order = {
+      id: 'o2', ticketNumber: 11, customerName: 'Maria',
+      items: [{ product: mockProduct, quantity: 2 }],
+      totalUSD: 20, totalLocal: 800,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T12:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: session, orders: [order1, order2] });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValue([]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText(/\$30\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.200,00\s*Bs/)).toBeInTheDocument();
+  });
+
+  it('shows revaluation indicator when totalLocal differs from current rate', async () => {
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: true, openedAt: '2024-05-26T08:00:00Z',
+    };
+    // totalLocal=500 ≠ totalUSD*rate=400 → revalued
+    const order: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 500,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: session, orders: [order] });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValue([]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText(/↻/)).toBeInTheDocument();
+  });
+
+  it('does not show revaluation indicator when totalLocal matches current rate', async () => {
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: true, openedAt: '2024-05-26T08:00:00Z',
+    };
+    // totalLocal=400 matches totalUSD*rate=10*40=400 → NOT revalued
+    const order: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 400,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: session, orders: [order] });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValue([]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText('Ticket #10')).toBeInTheDocument();
+    // Should NOT show ↻ indicator
+    expect(screen.queryByText(/↻/)).not.toBeInTheDocument();
+  });
+
+  it('computes total Bs from stored totalLocal when no currentDay', async () => {
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: false, openedAt: '2024-05-26T08:00:00Z',
+    };
+    const order: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 350,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: null });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValueOnce([order]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    // No currentDay → totalBs falls back to sum of totalLocal = 350
+    expect(await screen.findByText(/Total:.*\$\d+\.\d+.*\|.*350,00\s*Bs/)).toBeInTheDocument();
+  });
+
+  it('shows items preview with single item (no "y X más")', async () => {
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: true, openedAt: '2024-05-26T08:00:00Z',
+    };
+    // Only 1 item — no "y X más" suffix
+    const order: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [{ product: mockProduct, quantity: 1 }],
+      totalUSD: 10, totalLocal: 400,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: session, orders: [order] });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValue([]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText(/Hamburguesa/)).toBeInTheDocument();
+    expect(screen.queryByText(/más/)).not.toBeInTheDocument();
+  });
+
+  it('shows items preview with remaining count', async () => {
+    const extraProduct: Product = {
+      id: '3', name: 'Papas', price: 5,
+      category: 'Comida', soldByWeight: false,
+    };
+    const extraProduct2: Product = {
+      id: '4', name: 'Bebida', price: 3,
+      category: 'Bebidas', soldByWeight: false,
+    };
+    const session: DaySession = {
+      id: 's1', date: '2024-05-26', exchangeRate: 40,
+      isOpen: true, openedAt: '2024-05-26T08:00:00Z',
+    };
+    const order: Order = {
+      id: 'o1', ticketNumber: 10, customerName: 'Juan',
+      items: [
+        { product: mockProduct, quantity: 1 },
+        { product: mockProductWeight, quantity: 0.5 },
+        { product: extraProduct, quantity: 2 },
+        { product: extraProduct2, quantity: 1 },
+      ],
+      totalUSD: 35.5, totalLocal: 1420,
+      status: 'completed', paymentStatus: 'pending',
+      createdAt: '2024-05-26T10:00:00Z',
+    };
+
+    const mockApp = createMockApp({ sessions: [session], currentDay: session, orders: [order] });
+    mockApp.fetchOrdersBySession = vi.fn().mockResolvedValue([]);
+    vi.mocked(useApp).mockReturnValue(mockApp);
+    const PendingPayments = (await import('@/pages/PendingPayments')).default;
+    renderWithRouter(<PendingPayments />);
+
+    expect(await screen.findByText(/Hamburguesa/)).toBeInTheDocument();
+    expect(screen.getByText(/Carne/)).toBeInTheDocument();
+    expect(screen.getByText(/y 2 más/)).toBeInTheDocument();
+  });
 });
 
 describe('CashRegister page', () => {

@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, CheckCircle } from 'lucide-react';
 import { OrderDetailModal } from '@/components/OrderDetailModal';
 import { Order, DaySession } from '@/types';
+import { formatSessionDate } from '@/lib/format';
 
 interface SessionGroup {
   session: DaySession;
@@ -61,15 +62,6 @@ export default function PendingPayments() {
 
   const currentRate = state.currentDay?.exchangeRate;
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T12:00:00');
-    return d.toLocaleDateString('es-VE', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-  };
-
   const formatBs = (value: number) =>
     value.toLocaleString('es-VE', { minimumFractionDigits: 2 });
 
@@ -107,7 +99,7 @@ export default function PendingPayments() {
             {sessionGroups.map(group => (
               <div key={group.session.id}>
                 <h3 className="text-lg font-display font-semibold mt-6 mb-3 border-t pt-4 flex items-center gap-2">
-                  📅 {formatDate(group.session.date)}
+                  📅 {formatSessionDate(group.session.openedAt)}
                   <span className="text-xs text-muted-foreground font-normal">
                     Tasa: {formatBs(group.session.exchangeRate)} Bs/$
                   </span>

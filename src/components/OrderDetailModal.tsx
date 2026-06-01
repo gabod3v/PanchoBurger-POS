@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useApp } from '@/contexts/AppContext';
@@ -44,6 +44,16 @@ export function OrderDetailModal({ order, open, onOpenChange, onPaymentComplete 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo_bs');
   const [paymentReference, setPaymentReference] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [customRate, setCustomRate] = useState(state.currentDay?.exchangeRate || 0);
+  const [customBsAmount, setCustomBsAmount] = useState(0);
+
+  useEffect(() => {
+    if (order && state.currentDay) {
+      const rate = state.currentDay.exchangeRate;
+      setCustomRate(rate);
+      setCustomBsAmount(order.totalUSD * rate);
+    }
+  }, [order]);
 
   if (!order || !open) return null;
 
@@ -59,6 +69,7 @@ export function OrderDetailModal({ order, open, onOpenChange, onPaymentComplete 
         order.id,
         paymentMethod,
         paymentMethod === 'pagomovil' ? paymentReference : undefined,
+        customBsAmount,
       );
       toast.success('Pago registrado');
       onPaymentComplete?.();
@@ -163,6 +174,45 @@ export function OrderDetailModal({ order, open, onOpenChange, onPaymentComplete 
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-destructive font-medium">Sin pagar</p>
+
+          {showRevalued && (
+            <div className="space-y-3 bg-muted/30 rounded-lg p-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Configurar pago
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Tasa Bs/USD</label>
+                  <Input
+                    type="number"
+                    value={customRate}
+                    onChange={e => {
+                      const r = parseFloat(e.target.value) || 0;
+                      setCustomRate(r);
+                      setCustomBsAmount(order.totalUSD * r);
+                    }}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Total Bs</label>
+                  <Input
+                    type="number"
+                    value={customBsAmount.toFixed(2)}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setCustomBsAmount(val);
+                      setCustomRate(val > 0 ? val / order.totalUSD : 0);
+                    }}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">
               Método de Pago

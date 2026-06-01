@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatQty, formatUnitPrice, formatLineTotal, formatItemSummary } from './format';
+import { formatQty, formatUnitPrice, formatLineTotal, formatItemSummary, formatSessionDate } from './format';
 
 describe('formatQty', () => {
   it('shows integer for unit products', () => {
@@ -41,5 +41,42 @@ describe('formatItemSummary', () => {
   it('formats weight items as X.XX kg Name', () => {
     expect(formatItemSummary(0.5, 'Cochino Frito', true)).toBe('0.50 kg Cochino Frito');
     expect(formatItemSummary(1.25, 'Carne', true)).toBe('1.25 kg Carne');
+  });
+});
+
+describe('formatSessionDate', () => {
+  it('formats ISO date string to es-VE locale with weekday, day, month, year', () => {
+    const isoStr = '2024-05-26T08:00:00.000Z';
+    const result = formatSessionDate(isoStr);
+    const expected = new Date(isoStr).toLocaleDateString('es-VE', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    expect(result).toBe(expected);
+  });
+
+  it('formats different dates correctly', () => {
+    const isoStr = '2023-12-25T10:30:00.000Z';
+    const result = formatSessionDate(isoStr);
+    const expected = new Date(isoStr).toLocaleDateString('es-VE', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    expect(result).toBe(expected);
+  });
+
+  it('returns "Invalid Date" for unparseable strings', () => {
+    const result = formatSessionDate('not-a-date');
+    expect(result).toBe('Invalid Date');
+  });
+
+  it('returns "Invalid Date" for locale date format like "26/5/2026"', () => {
+    // This is the exact bug scenario — locale dates are NOT parseable
+    const result = formatSessionDate('26/5/2026');
+    expect(result).toBe('Invalid Date');
   });
 });

@@ -197,7 +197,8 @@ describe('OrderDetailModal', () => {
     // Click confirm
     await user.click(screen.getByText('Confirmar Pago'));
 
-    expect(registerPayment).toHaveBeenCalledWith('o2', 'pagomovil', '1234');
+    // 4th arg = customBsAmount = 8.50 * 36 (exchangeRate) = 306
+    expect(registerPayment).toHaveBeenCalledWith('o2', 'pagomovil', '1234', 306);
     expect(onPaymentComplete).toHaveBeenCalled();
   });
 
@@ -310,5 +311,104 @@ describe('OrderDetailModal', () => {
     renderModal(mockPendingOrder, true);
 
     expect(screen.getByText('Sin pagar')).toBeInTheDocument();
+  });
+
+  // RED: test shows editable rate and amount inputs when revaluation is active
+  it('shows editable rate and amount inputs when revaluation is active', () => {
+    vi.mocked(useApp).mockReturnValue({
+      state: {
+        currentDay: { id: 'd1', date: '2024-01-15', exchangeRate: 50, isOpen: true, openedAt: '2024-01-15T08:00:00Z' },
+      },
+      registerPayment: vi.fn(),
+    });
+    renderModal(mockPendingOrder, true);
+
+    expect(screen.getByText('Configurar pago')).toBeInTheDocument();
+    expect(screen.getByText('Tasa Bs/USD')).toBeInTheDocument();
+    expect(screen.getByText('Total Bs')).toBeInTheDocument();
+  });
+
+  // RED: test does NOT show editable rate inputs when order is already paid
+  it('does not show editable rate inputs for paid orders', () => {
+    vi.mocked(useApp).mockReturnValue(createMockApp());
+    renderModal(mockPaidOrder, true);
+
+    expect(screen.queryByText('Configurar pago')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tasa Bs/USD')).not.toBeInTheDocument();
+  });
+
+  // RED: test updating rate recalculates Bs amount
+  it('updates Bs amount when rate input changes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useApp).mockReturnValue({
+      state: {
+        currentDay: { id: 'd1', date: '2024-01-15', exchangeRate: 36, isOpen: true, openedAt: '2024-01-15T08:00:00Z' },
+      },
+      registerPayment: vi.fn(),
+    });
+    renderModal(mockPendingOrder, true);
+
+    // Find the rate input (it's an input[type=number])
+    const rateInputs = screen.getAllByRole('spinbutton');
+    expect(rateInputs.length).toBeGreaterThanOrEqual(1);
+    const rateInput = rateInputs[0];
+
+    await user.clear(rateInput);
+    await user.type(rateInput, '50');
+
+    // 8.50 * 50 = 425, so the second input should show 425
+    const bsInput = rateInputs[1] as HTMLInputElement;
+    expect(parseFloat(bsInput.value)).toBeCloseTo(425, 0);
+  });
+
+  // RED: test updating Bs amount recalculates rate
+  it('updates rate when Bs amount input changes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useApp).mockReturnValue({
+      state: {
+        currentDay: { id: 'd1', date: '2024-01-15', exchangeRate: 36, isOpen: true, openedAt: '2024-01-15T08:00:00Z' },
+      },
+      registerPayment: vi.fn(),
+    });
+    renderModal(mockPendingOrder, true);
+
+    const rateInputs = screen.getAllByRole('spinbutton');
+    const bsInput = rateInputs[1];
+
+    await user.clear(bsInput);
+    await user.type(bsInput, '500');
+
+    // 500 / 8.50 = 58.823529... so rate should be approximately 58.82
+    const rateInput = rateInputs[0] as HTMLInputElement;
+    expect(parseFloat(rateInput.value)).toBeCloseTo(58.82, 1);
+  });
+
+  // RED: test passes custom Bs amount when confirming payment with modified rate
+  it('passes custom Bs amount when confirming payment with modified rate', async () => {
+    const registerPayment = vi.fn();
+    const onPaymentComplete = vi.fn();
+    const onOpenChange = vi.fn();
+    vi.mocked(useApp).mockReturnValue({
+      state: {
+        currentDay: { id: 'd1', date: '2024-01-15', exchangeRate: 36, isOpen: true, openedAt: '2024-01-15T08:00:00Z' },
+      },
+      registerPayment,
+    });
+
+    const user = userEvent.setup();
+    renderModal(mockPendingOrder, true, onOpenChange, onPaymentComplete);
+
+    // Change rate to 50
+    const rateInputs = screen.getAllByRole('spinbutton');
+    await user.clear(rateInputs[0]);
+    await user.type(rateInputs[0], '50');
+
+    // Select payment method and confirm
+    await user.click(screen.getByText('Efectivo Bs'));
+    await user.click(screen.getByText('Confirmar Pago'));
+
+    // customBsAmount = 8.50 * 50 = 425
+    expect(registerPayment).toHaveBeenCalledWith('o2', 'efectivo_bs', undefined, 425);
+    expect(onPaymentComplete).toHaveBeenCalled();
   });
 });

@@ -139,7 +139,7 @@ interface AppContextType {
   addOrder: (customerName: string, items: OrderItem[], sessionId?: string, ticketNumber?: number, paymentStatus?: PaymentStatus, paymentMethod?: PaymentMethod, paymentReference?: string) => void;
   deleteOrder: (id: string, sessionId?: string) => void;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
-  registerPayment: (orderId: string, paymentMethod: PaymentMethod, paymentReference?: string) => void;
+  registerPayment: (orderId: string, paymentMethod: PaymentMethod, paymentReference?: string, customTotalLocal?: number) => void;
   resetDay: () => void;
   fetchOrdersBySession: (sessionId: string) => Promise<Order[]>;
 }
@@ -611,28 +611,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await performMutation('UPDATE', 'pedidos', { id, status });
   };
 
-  const registerPayment = async (orderId: string, paymentMethod: PaymentMethod, paymentReference?: string) => {
+  const registerPayment = async (
+    orderId: string,
+    paymentMethod: PaymentMethod,
+    paymentReference?: string,
+    customTotalLocal?: number,
+  ) => {
     const currentDay = state.currentDay;
     const order = state.orders.find(o => o.id === orderId);
-    if (!order || !currentDay) return;
+    if (!currentDay) return;
 
-    // Recalcular totalLocal con la tasa del día actual
-    const newTotalLocal = order.totalUSD * currentDay.exchangeRate;
+    // Use custom Bs amount if provided, otherwise calculate from rate
+    const newTotalLocal = customTotalLocal ?? (order ? order.totalUSD * currentDay.exchangeRate : undefined);
+    if (newTotalLocal === undefined) return;
+
     const paidAt = new Date().toISOString();
 
-    // Actualizar estado local
-    dispatch({
-      type: 'REGISTER_PAYMENT',
-      payload: {
-        id: orderId,
-        paymentMethod,
-        paymentReference: paymentMethod === 'pagomovil' ? paymentReference : undefined,
-        totalLocal: newTotalLocal,
-        paidAt
-      }
-    });
-    
-    // Actualizar en Supabase
+    // Local state update (only if order is in current session's state)
+    if (order) {
+      dispatch({
+        type: 'REGISTER_PAYMENT',
+        payload: {
+          id: orderId,
+          paymentMethod,
+          paymentReference: paymentMethod === 'pagomovil' ? paymentReference : undefined,
+          totalLocal: newTotalLocal,
+          paidAt
+        }
+      });
+    }
+
+    // Always update Supabase
     await performMutation('UPDATE', 'pedidos', {
       id: orderId,
       payment_status: 'paid',

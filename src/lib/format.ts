@@ -39,3 +39,17 @@ export function formatItemSummary(qty: number, name: string, soldByWeight?: bool
   }
   return `${Math.floor(qty)}x ${name}`;
 }
+
+/**
+ * Format a session date from ISO string to es-VE locale.
+ * Falls back to "Invalid Date" for unparseable strings.
+ */
+export function formatSessionDate(isoStr: string): string {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('es-VE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
